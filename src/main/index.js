@@ -155,6 +155,57 @@ ipcMain.handle("support:send-message", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("support:ban-conversation", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  if (!conversationId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId is required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/ban`,
+    method: "POST",
+    token: payload?.token
+  });
+});
+
+ipcMain.handle("support:unban-conversation", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  if (!conversationId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId is required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/unban`,
+    method: "POST",
+    token: payload?.token
+  });
+});
+
+ipcMain.handle("support:clear-conversation", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  if (!conversationId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId is required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/clear`,
+    method: "POST",
+    token: payload?.token
+  });
+});
+
 app.whenReady().then(() => {
   createWindow();
 

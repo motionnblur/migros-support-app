@@ -29,7 +29,8 @@ function formatConversation(rawConversation) {
     time,
     unread: Number(rawConversation?.unreadCount || 0),
     priority: Number(rawConversation?.unreadCount || 0) > 5 ? "Urgent" : Number(rawConversation?.unreadCount || 0) > 0 ? "High" : "Normal",
-    channel: "Website"
+    channel: "Website",
+    isBanned: Boolean(rawConversation?.isBanned)
   };
 }
 
@@ -65,7 +66,8 @@ function areConversationsEqual(left, right) {
       a.time !== b.time ||
       a.unread !== b.unread ||
       a.priority !== b.priority ||
-      a.customer !== b.customer
+      a.customer !== b.customer ||
+      a.isBanned !== b.isBanned
     ) {
       return false;
     }
@@ -106,6 +108,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const [activeNav, setActiveNav] = React.useState("inbox");
   const [loadingConversations, setLoadingConversations] = React.useState(true);
   const [loadingMessages, setLoadingMessages] = React.useState(false);
+  const [actionBusy, setActionBusy] = React.useState(false);
   const [error, setError] = React.useState("");
 
   const fetchConversations = React.useCallback(async () => {
@@ -237,6 +240,13 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return { ok: false, error: "No conversation selected" };
     }
 
+    const activeConversation = conversations.find((conversation) => conversation.id === selectedConversationId);
+    if (activeConversation?.isBanned) {
+      const banError = "This user is banned. You cannot send new messages.";
+      setError(banError);
+      return { ok: false, error: banError };
+    }
+
     const result = await window.electronAPI.sendMessage(accessToken, selectedConversationId, text);
     if (!result.ok) {
       if (result.status === 401) {
@@ -251,6 +261,85 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       fetchMessages(selectedConversationId, { showLoader: false }),
       fetchConversations()
     ]);
+    return { ok: true };
+  };
+
+  const handleBanConversation = async () => {
+    if (!selectedConversationId || actionBusy) {
+      return { ok: false, error: "No conversation selected" };
+    }
+
+    setActionBusy(true);
+    const result = await window.electronAPI.banConversation(accessToken, selectedConversationId);
+    setActionBusy(false);
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+      } else {
+        setError(result.error || "Failed to ban user");
+      }
+
+      return { ok: false, error: result.error || "Failed to ban user" };
+    }
+
+    await fetchConversations();
+    setError("");
+    return { ok: true };
+  };
+
+
+  const handleUnbanConversation = async () => {
+    if (!selectedConversationId || actionBusy) {
+      return { ok: false, error: "No conversation selected" };
+    }
+
+    setActionBusy(true);
+    const result = await window.electronAPI.unbanConversation(accessToken, selectedConversationId);
+    setActionBusy(false);
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+      } else {
+        setError(result.error || "Failed to unban user");
+      }
+
+      return { ok: false, error: result.error || "Failed to unban user" };
+    }
+
+    await fetchConversations();
+    setError("");
+    return { ok: true };
+  };
+  const handleClearConversation = async () => {
+    if (!selectedConversationId || actionBusy) {
+      return { ok: false, error: "No conversation selected" };
+    }
+
+    setActionBusy(true);
+    const result = await window.electronAPI.clearConversation(accessToken, selectedConversationId);
+    setActionBusy(false);
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+      } else {
+        setError(result.error || "Failed to clear chat");
+      }
+
+      return { ok: false, error: result.error || "Failed to clear chat" };
+    }
+
+    setMessagesByConversation((previous) => {
+      const next = { ...previous };
+      delete next[selectedConversationId];
+      return next;
+    });
+
+    await fetchConversations();
+
+    setError("");
     return { ok: true };
   };
 
@@ -381,6 +470,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             onBack={() => setMobileView("list")}
             onLogout={() => logout()}
             onSendMessage={handleSendMessage}
+            onBanConversation={handleBanConversation}
+            onUnbanConversation={handleUnbanConversation}
+            onClearConversation={handleClearConversation}
+            actionBusy={actionBusy}
           />
         ) : null}
       </Box>
@@ -400,6 +493,9 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     </Box>
   );
 }
+
+
+
 
 
 

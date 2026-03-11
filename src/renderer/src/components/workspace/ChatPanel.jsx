@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -25,6 +26,9 @@ import SentimentSatisfiedAltRoundedIcon from "@mui/icons-material/SentimentSatis
 import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
 import AssignmentReturnRoundedIcon from "@mui/icons-material/AssignmentReturnRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
+import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
+import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
+import DeleteSweepRoundedIcon from "@mui/icons-material/DeleteSweepRounded";
 import PriorityPill from "./PriorityPill";
 
 export default function ChatPanel({
@@ -34,7 +38,11 @@ export default function ChatPanel({
   loadingMessages,
   onBack,
   onLogout,
-  onSendMessage
+  onSendMessage,
+  onBanConversation,
+  onUnbanConversation,
+  onClearConversation,
+  actionBusy
 }) {
   const [draftMessage, setDraftMessage] = React.useState("");
   const [sending, setSending] = React.useState(false);
@@ -53,7 +61,7 @@ export default function ChatPanel({
 
   const submitMessage = async () => {
     const text = draftMessage.trim();
-    if (!text || sending) {
+    if (!text || sending || activeConversation?.isBanned) {
       return;
     }
 
@@ -64,6 +72,35 @@ export default function ChatPanel({
     if (result?.ok) {
       setDraftMessage("");
     }
+  };
+
+  const handleBanToggle = async () => {
+    if (actionBusy) {
+      return;
+    }
+
+    if (activeConversation?.isBanned) {
+      if (!onUnbanConversation) {
+        return;
+      }
+
+      await onUnbanConversation();
+      return;
+    }
+
+    if (!onBanConversation) {
+      return;
+    }
+
+    await onBanConversation();
+  };
+
+  const handleClear = async () => {
+    if (!onClearConversation || actionBusy) {
+      return;
+    }
+
+    await onClearConversation();
   };
 
   if (!activeConversation) {
@@ -92,7 +129,7 @@ export default function ChatPanel({
             <ArrowBackIosNewRoundedIcon sx={{ fontSize: 16 }} />
           </IconButton>
         ) : null}
-        <Avatar sx={{ bgcolor: "#0f766e", width: 36, height: 36 }}>
+        <Avatar sx={{ bgcolor: activeConversation.isBanned ? "#991b1b" : "#0f766e", width: 36, height: 36 }}>
           {activeConversation.customer
             .split(" ")
             .slice(0, 2)
@@ -115,15 +152,57 @@ export default function ChatPanel({
             <SearchRoundedIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
+
+        <Tooltip title={activeConversation.isBanned ? "Unban user" : "Ban user"}>
+          <span>
+            <IconButton
+              size="small"
+              onClick={handleBanToggle}
+              disabled={actionBusy}
+              sx={{
+                border: activeConversation.isBanned ? "1px solid #86efac" : "1px solid #fecaca",
+                color: activeConversation.isBanned ? "#166534" : "#b91c1c",
+                bgcolor: activeConversation.isBanned ? "#dcfce7" : "transparent"
+              }}
+            >
+              {activeConversation.isBanned ? (
+                <LockOpenRoundedIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <BlockRoundedIcon sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Clear chat history">
+          <span>
+            <IconButton
+              size="small"
+              onClick={handleClear}
+              disabled={actionBusy}
+              sx={{ border: "1px solid #fed7aa", color: "#c2410c" }}
+            >
+              <DeleteSweepRoundedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
         <Tooltip title="More actions">
           <IconButton size="small" sx={{ border: "1px solid #e2e8f0" }}>
             <MoreVertRoundedIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
+
         <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon />} onClick={onLogout}>
           Logout
         </Button>
       </Box>
+
+      {activeConversation.isBanned ? (
+        <Alert severity="warning" sx={{ m: 1.5, mb: 0, border: "1px solid #fca5a5" }}>
+          This user is banned. New outgoing messages are disabled.
+        </Alert>
+      ) : null}
 
       <Box ref={messagesContainerRef} sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: { xs: 1.2, md: 3 }, py: 2 }}>
         {loadingMessages ? (
@@ -182,6 +261,7 @@ export default function ChatPanel({
       <Box sx={{ p: { xs: 1.2, md: 1.7 }, bgcolor: "#ffffff" }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton
+            disabled={activeConversation.isBanned}
             sx={{
               border: "1px solid #dbe2ef",
               transition: "all 180ms ease",
@@ -193,10 +273,11 @@ export default function ChatPanel({
           <TextField
             fullWidth
             size="small"
-            placeholder="Write a reply to the customer..."
+            placeholder={activeConversation.isBanned ? "User is banned" : "Write a reply to the customer..."}
             multiline
             maxRows={4}
             value={draftMessage}
+            disabled={activeConversation.isBanned}
             onChange={(event) => setDraftMessage(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -222,7 +303,7 @@ export default function ChatPanel({
           <Button
             variant="contained"
             endIcon={<SendRoundedIcon />}
-            disabled={sending || !draftMessage.trim()}
+            disabled={sending || !draftMessage.trim() || activeConversation.isBanned}
             onClick={submitMessage}
             sx={{
               background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",

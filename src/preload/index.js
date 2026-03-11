@@ -7,5 +7,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getMessages: (token, conversationId) =>
     ipcRenderer.invoke("support:get-messages", { token, conversationId }),
   sendMessage: (token, conversationId, text) =>
-    ipcRenderer.invoke("support:send-message", { token, conversationId, text })
+    ipcRenderer.invoke("support:send-message", { token, conversationId, text }),
+  banConversation: (token, conversationId) =>
+    ipcRenderer.invoke("support:ban-conversation", { token, conversationId }),
+  unbanConversation: (token, conversationId) =>
+    ipcRenderer.invoke("support:unban-conversation", { token, conversationId }),
+  clearConversation: (token, conversationId) =>
+    ipcRenderer.invoke("support:clear-conversation", { token, conversationId })
 });
