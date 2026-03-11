@@ -1,6 +1,22 @@
 import React from "react";
-import { Avatar, Badge, Box, Chip, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Badge, Box, Chip, InputAdornment, Stack, TextField, Typography } from "@mui/material";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
+import SmartphoneRoundedIcon from "@mui/icons-material/SmartphoneRounded";
+import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 import PriorityPill from "./PriorityPill";
+
+function ChannelIcon({ channel }) {
+  if (channel === "Mobile App") {
+    return <SmartphoneRoundedIcon sx={{ fontSize: 14 }} />;
+  }
+
+  if (channel === "Marketplace") {
+    return <StorefrontRoundedIcon sx={{ fontSize: 14 }} />;
+  }
+
+  return <LanguageRoundedIcon sx={{ fontSize: 14 }} />;
+}
 
 export default function ConversationList({ conversations, activeConversationId, onSelectConversation }) {
   return (
@@ -10,9 +26,25 @@ export default function ConversationList({ conversations, activeConversationId, 
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.2 }}>
             Support Inbox
           </Typography>
-          <Chip label="Live" size="small" sx={{ bgcolor: "#dcfce7", color: "#166534", fontWeight: 700 }} />
+          <Chip
+            icon={<LanguageRoundedIcon sx={{ fontSize: "16px !important" }} />}
+            label="Live"
+            size="small"
+            sx={{ bgcolor: "#dcfce7", color: "#166534", fontWeight: 700 }}
+          />
         </Stack>
-        <TextField size="small" fullWidth placeholder="Search conversations, users, orders" />
+        <TextField
+          size="small"
+          fullWidth
+          placeholder="Search conversations, users, orders"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchRoundedIcon sx={{ color: "#64748b", fontSize: 18 }} />
+              </InputAdornment>
+            )
+          }}
+        />
       </Box>
 
       <Stack spacing={0} sx={{ overflowY: "auto", p: 1 }}>
@@ -53,9 +85,12 @@ export default function ConversationList({ conversations, activeConversationId, 
                   <Typography sx={{ fontSize: 12, color: "#334155" }} noWrap>
                     {conversation.customer}
                   </Typography>
-                  <Typography sx={{ fontSize: 12, color: "#64748b" }} noWrap>
-                    {conversation.preview}
-                  </Typography>
+                  <Stack direction="row" spacing={0.6} alignItems="center" sx={{ color: "#64748b" }}>
+                    <ChannelIcon channel={conversation.channel} />
+                    <Typography sx={{ fontSize: 12 }} noWrap>
+                      {conversation.preview}
+                    </Typography>
+                  </Stack>
                 </Box>
 
                 <Stack spacing={0.5} alignItems="flex-end">

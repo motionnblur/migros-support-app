@@ -1,9 +1,20 @@
 import React from "react";
-import { Avatar, Box } from "@mui/material";
+import { Avatar, Box, IconButton, Tooltip } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
+import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ConversationList from "./ConversationList";
 import ChatPanel from "./ChatPanel";
 import { mockConversations, mockMessages } from "../../data/mockSupportData";
+
+const navActions = [
+  { id: "inbox", icon: ForumRoundedIcon, label: "Inbox", active: true },
+  { id: "dashboard", icon: DashboardRoundedIcon, label: "Dashboard" },
+  { id: "insights", icon: InsightsRoundedIcon, label: "Insights" },
+  { id: "settings", icon: SettingsRoundedIcon, label: "Settings" }
+];
 
 export default function SupportWorkspace({ currentUser, logout }) {
   const isMobile = useMediaQuery("(max-width:900px)");
@@ -40,7 +51,7 @@ export default function SupportWorkspace({ currentUser, logout }) {
       <Box
         sx={{
           height: { xs: "calc(100vh - 16px)", md: "calc(100vh - 32px)" },
-          borderRadius: 4,
+          borderRadius: 2,
           overflow: "hidden",
           border: "1px solid #dbe2ef",
           bgcolor: "#f8fafc",
@@ -57,7 +68,7 @@ export default function SupportWorkspace({ currentUser, logout }) {
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             alignItems: "center",
-            gap: 2,
+            gap: 1,
             py: 2,
             bgcolor: "#0f172a",
             color: "#e2e8f0"
@@ -71,18 +82,35 @@ export default function SupportWorkspace({ currentUser, logout }) {
               display: "grid",
               placeItems: "center",
               bgcolor: "#2563eb",
-              color: "white",
-              fontWeight: 800
+              color: "white"
             }}
           >
-            S
+            <ForumRoundedIcon fontSize="small" />
           </Box>
-          <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#1e293b", display: "grid", placeItems: "center" }}>
-            C
-          </Box>
-          <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#1e293b", display: "grid", placeItems: "center" }}>
-            T
-          </Box>
+
+          {navActions.map((action) => {
+            const ActionIcon = action.icon;
+            return (
+              <Tooltip key={action.id} title={action.label} placement="right">
+                <IconButton
+                  size="small"
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 2,
+                    bgcolor: action.active ? "#1d4ed8" : "#1e293b",
+                    color: "#e2e8f0",
+                    "&:hover": {
+                      bgcolor: action.active ? "#1e40af" : "#334155"
+                    }
+                  }}
+                >
+                  <ActionIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            );
+          })}
+
           <Box sx={{ mt: "auto", mb: 1 }}>
             <Avatar sx={{ bgcolor: "#334155", width: 34, height: 34 }}>
               {currentUser?.username?.[0]?.toUpperCase() || "U"}

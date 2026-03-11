@@ -1,5 +1,25 @@
 import React from "react";
-import { Avatar, Box, Button, Card, CardContent, Chip, Divider, Stack, TextField, Typography } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography
+} from "@mui/material";
+import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import AttachFileRoundedIcon from "@mui/icons-material/AttachFileRounded";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
+import AssignmentReturnRoundedIcon from "@mui/icons-material/AssignmentReturnRounded";
+import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import PriorityPill from "./PriorityPill";
 
 export default function ChatPanel({ isMobile, activeConversation, activeMessages, onBack, onLogout }) {
@@ -17,9 +37,9 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
         }}
       >
         {isMobile ? (
-          <Button size="small" variant="text" onClick={onBack}>
-            Back
-          </Button>
+          <IconButton size="small" onClick={onBack} sx={{ border: "1px solid #e2e8f0" }}>
+            <ArrowBackIosNewRoundedIcon sx={{ fontSize: 16 }} />
+          </IconButton>
         ) : null}
         <Avatar sx={{ bgcolor: "#0f766e", width: 36, height: 36 }}>
           {activeConversation.customer
@@ -37,7 +57,7 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
           </Typography>
         </Box>
         <PriorityPill priority={activeConversation.priority} />
-        <Button size="small" variant="outlined" onClick={onLogout}>
+        <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon />} onClick={onLogout}>
           Logout
         </Button>
       </Box>
@@ -84,16 +104,33 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
       <Divider />
       <Box sx={{ p: { xs: 1.2, md: 1.7 }, bgcolor: "#ffffff" }}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <Button variant="text" sx={{ minWidth: 40 }}>
-            +
+          <IconButton sx={{ border: "1px solid #dbe2ef" }}>
+            <AttachFileRoundedIcon fontSize="small" />
+          </IconButton>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Write a reply to the customer..."
+            multiline
+            maxRows={4}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    Enter to send
+                  </Typography>
+                </InputAdornment>
+              )
+            }}
+          />
+          <Button variant="contained" endIcon={<SendRoundedIcon />}>
+            Send
           </Button>
-          <TextField fullWidth size="small" placeholder="Write a reply to the customer..." multiline maxRows={4} />
-          <Button variant="contained">Send</Button>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-          <Chip size="small" label="Escalate" />
-          <Chip size="small" label="Refund template" />
-          <Chip size="small" label="Track shipment" />
+          <Chip size="small" icon={<ReportProblemRoundedIcon />} label="Escalate" />
+          <Chip size="small" icon={<AssignmentReturnRoundedIcon />} label="Refund template" />
+          <Chip size="small" icon={<LocalShippingRoundedIcon />} label="Track shipment" />
         </Stack>
       </Box>
     </Box>
