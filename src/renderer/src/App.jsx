@@ -43,7 +43,7 @@ export default function App() {
 
                         <TextField
                             label="Kullanıcı adı"
-                            type="email"
+                            type="text"
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
                             fullWidth
