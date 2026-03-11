@@ -286,6 +286,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
           bgcolor: "#f8fafc",
           boxShadow: "0 20px 50px rgba(15, 23, 42, 0.12)",
           display: "grid",
+          minHeight: 0,
           gridTemplateColumns: {
             xs: "1fr",
             md: "76px minmax(280px, 330px) 1fr"
@@ -399,3 +400,6 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     </Box>
   );
 }
+
+
+

@@ -63,7 +63,7 @@ export default function ChatPanel({
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, bgcolor: "#eef3fb" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, bgcolor: "#eef3fb" }}>
       <Box
         sx={{
           px: { xs: 1.5, md: 2.5 },
@@ -113,7 +113,7 @@ export default function ChatPanel({
         </Button>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 1.2, md: 3 }, py: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: { xs: 1.2, md: 3 }, py: 2 }}> 
         {loadingMessages ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#64748b" }}>
             <CircularProgress size={16} />
@@ -242,3 +242,4 @@ export default function ChatPanel({
     </Box>
   );
 }
+

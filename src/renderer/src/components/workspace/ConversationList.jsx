@@ -33,7 +33,8 @@ export default function ConversationList({ conversations, activeConversationId, 
         display: "flex",
         flexDirection: "column",
         borderRight: { md: "1px solid #dbe2ef" },
-        bgcolor: "#f8fafc"
+        bgcolor: "#f8fafc",
+        minHeight: 0
       }}
     >
       <Box sx={{ px: 2, py: 2, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
@@ -62,7 +63,7 @@ export default function ConversationList({ conversations, activeConversationId, 
         />
       </Box>
 
-      <Stack spacing={0} sx={{ overflowY: "auto", p: 1 }}>
+      <Stack spacing={0} sx={{ overflowY: "auto", p: 1, minHeight: 0 }}>
         {conversations.map((conversation) => {
           const active = conversation.id === activeConversationId;
 
@@ -170,3 +171,6 @@ export default function ConversationList({ conversations, activeConversationId, 
     </Box>
   );
 }
+
+
+
