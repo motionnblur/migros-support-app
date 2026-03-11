@@ -19,7 +19,9 @@ function ChannelIcon({ channel }) {
   return <LanguageRoundedIcon sx={{ fontSize: 14, color: "#0891b2" }} />;
 }
 
-export default function ConversationList({ conversations, activeConversationId, onSelectConversation }) {
+export default function ConversationList({ conversations, activeConversationId, onSelectConversation, loading }) {
+  const hasConversations = conversations.length > 0;
+
   return (
     <Box
       sx={{
@@ -158,6 +160,12 @@ export default function ConversationList({ conversations, activeConversationId, 
             </Box>
           );
         })}
+
+        {!loading && !hasConversations ? (
+          <Box sx={{ p: 2, color: "#64748b", textAlign: "center", fontSize: 14 }}>
+            No customer conversations yet.
+          </Box>
+        ) : null}
       </Stack>
     </Box>
   );

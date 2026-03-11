@@ -11,12 +11,14 @@ export default function App() {
   const [sessionLoading, setSessionLoading] = React.useState(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [accessToken, setAccessToken] = React.useState("");
   const [error, setError] = React.useState("");
 
   const logout = React.useCallback((message = "") => {
     clearStoredAuth();
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setAccessToken("");
     setPassword("");
     if (message) {
       setError(message);
@@ -30,11 +32,13 @@ export default function App() {
     if (isTokenValid(token) && user) {
       setIsAuthenticated(true);
       setCurrentUser(user);
+      setAccessToken(token || "");
       setError("");
     } else {
       clearStoredAuth();
       setIsAuthenticated(false);
       setCurrentUser(null);
+      setAccessToken("");
     }
 
     setSessionLoading(false);
@@ -68,10 +72,11 @@ export default function App() {
         return;
       }
 
-      const { accessToken, user } = result.data;
-      localStorage.setItem("accessToken", accessToken);
+      const { accessToken: token, user } = result.data;
+      localStorage.setItem("accessToken", token);
       localStorage.setItem("user", JSON.stringify(user));
 
+      setAccessToken(token);
       setIsAuthenticated(true);
       setCurrentUser(user);
       setPassword("");
@@ -99,7 +104,7 @@ export default function App() {
   }
 
   if (isAuthenticated) {
-    return <SupportWorkspace currentUser={currentUser} logout={logout} />;
+    return <SupportWorkspace currentUser={currentUser} logout={logout} accessToken={accessToken} />;
   }
 
   return (

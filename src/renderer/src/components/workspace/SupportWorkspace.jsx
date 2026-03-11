@@ -1,5 +1,5 @@
 import React from "react";
-import { Avatar, Box, IconButton, Tooltip } from "@mui/material";
+import { Alert, Avatar, Box, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
@@ -7,7 +7,6 @@ import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ConversationList from "./ConversationList";
 import ChatPanel from "./ChatPanel";
-import { mockConversations, mockMessages } from "../../data/mockSupportData";
 
 const navActions = [
   { id: "inbox", icon: ForumRoundedIcon, label: "Inbox" },
@@ -16,15 +15,142 @@ const navActions = [
   { id: "settings", icon: SettingsRoundedIcon, label: "Settings" }
 ];
 
-export default function SupportWorkspace({ currentUser, logout }) {
+function formatConversation(rawConversation) {
+  const date = rawConversation?.lastMessageAt ? new Date(rawConversation.lastMessageAt) : null;
+  const time = date && !Number.isNaN(date.getTime())
+    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "--:--";
+
+  return {
+    id: rawConversation?.conversationId,
+    name: rawConversation?.customerId || "Customer",
+    customer: rawConversation?.customerId || "Unknown",
+    preview: rawConversation?.lastMessagePreview || "No messages yet",
+    time,
+    unread: Number(rawConversation?.unreadCount || 0),
+    priority: Number(rawConversation?.unreadCount || 0) > 5 ? "Urgent" : Number(rawConversation?.unreadCount || 0) > 0 ? "High" : "Normal",
+    channel: "Website"
+  };
+}
+
+function formatMessage(rawMessage) {
+  const date = rawMessage?.occurredAt ? new Date(rawMessage.occurredAt) : null;
+  const time = date && !Number.isNaN(date.getTime())
+    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "--:--";
+
+  const isAgent = rawMessage?.sender === "AGENT" || rawMessage?.sender === "MANAGEMENT";
+
+  return {
+    id: rawMessage?.id || rawMessage?.messageId,
+    type: isAgent ? "agent" : "customer",
+    author: isAgent ? "Support Agent" : rawMessage?.customerId || "Customer",
+    text: rawMessage?.text || "",
+    time
+  };
+}
+
+export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const isMobile = useMediaQuery("(max-width:900px)");
-  const [selectedConversationId, setSelectedConversationId] = React.useState(mockConversations[0].id);
+  const [conversations, setConversations] = React.useState([]);
+  const [selectedConversationId, setSelectedConversationId] = React.useState("");
+  const [messagesByConversation, setMessagesByConversation] = React.useState({});
   const [mobileView, setMobileView] = React.useState("list");
   const [activeNav, setActiveNav] = React.useState("inbox");
+  const [loadingConversations, setLoadingConversations] = React.useState(true);
+  const [loadingMessages, setLoadingMessages] = React.useState(false);
+  const [error, setError] = React.useState("");
 
-  const activeConversation =
-    mockConversations.find((conversation) => conversation.id === selectedConversationId) || mockConversations[0];
-  const activeMessages = mockMessages[activeConversation.id] || [];
+  const fetchConversations = React.useCallback(async () => {
+    const result = await window.electronAPI.getConversations(accessToken);
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+        return;
+      }
+
+      setError(result.error || "Failed to load conversations");
+      return;
+    }
+
+    const formatted = Array.isArray(result.data) ? result.data.map(formatConversation) : [];
+    setConversations(formatted);
+
+    if (!selectedConversationId && formatted.length > 0) {
+      setSelectedConversationId(formatted[0].id);
+    }
+
+    if (selectedConversationId && !formatted.some((conversation) => conversation.id === selectedConversationId)) {
+      setSelectedConversationId(formatted[0]?.id || "");
+    }
+
+    setError("");
+  }, [accessToken, logout, selectedConversationId]);
+
+  const fetchMessages = React.useCallback(
+    async (conversationId) => {
+      if (!conversationId) {
+        return;
+      }
+
+      setLoadingMessages(true);
+      const result = await window.electronAPI.getMessages(accessToken, conversationId);
+      setLoadingMessages(false);
+
+      if (!result.ok) {
+        if (result.status === 401) {
+          logout("Session expired. Please sign in again.");
+          return;
+        }
+
+        setError(result.error || "Failed to load messages");
+        return;
+      }
+
+      const formatted = Array.isArray(result.data) ? result.data.map(formatMessage) : [];
+      setMessagesByConversation((previous) => ({
+        ...previous,
+        [conversationId]: formatted
+      }));
+      setError("");
+    },
+    [accessToken, logout]
+  );
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoadingConversations(true);
+      await fetchConversations();
+      if (!cancelled) {
+        setLoadingConversations(false);
+      }
+    };
+
+    load();
+
+    const interval = setInterval(fetchConversations, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [fetchConversations]);
+
+  React.useEffect(() => {
+    if (!selectedConversationId) {
+      return undefined;
+    }
+
+    fetchMessages(selectedConversationId);
+
+    const interval = setInterval(() => {
+      fetchMessages(selectedConversationId);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [fetchMessages, selectedConversationId]);
 
   const handleSelectConversation = (conversationId) => {
     setSelectedConversationId(conversationId);
@@ -33,6 +159,28 @@ export default function SupportWorkspace({ currentUser, logout }) {
       setMobileView("chat");
     }
   };
+
+  const handleSendMessage = async (text) => {
+    if (!selectedConversationId) {
+      return { ok: false, error: "No conversation selected" };
+    }
+
+    const result = await window.electronAPI.sendMessage(accessToken, selectedConversationId, text);
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+      } else {
+        setError(result.error || "Failed to send message");
+      }
+      return { ok: false, error: result.error || "Failed to send message" };
+    }
+
+    await Promise.all([fetchMessages(selectedConversationId), fetchConversations()]);
+    return { ok: true };
+  };
+
+  const activeConversation = conversations.find((conversation) => conversation.id === selectedConversationId) || null;
+  const activeMessages = activeConversation ? messagesByConversation[activeConversation.id] || [] : [];
 
   const showList = !isMobile || mobileView === "list";
   const showChat = !isMobile || mobileView === "chat";
@@ -141,9 +289,10 @@ export default function SupportWorkspace({ currentUser, logout }) {
 
         {showList ? (
           <ConversationList
-            conversations={mockConversations}
-            activeConversationId={activeConversation.id}
+            conversations={conversations}
+            activeConversationId={activeConversation?.id || ""}
             onSelectConversation={handleSelectConversation}
+            loading={loadingConversations}
           />
         ) : null}
 
@@ -152,12 +301,26 @@ export default function SupportWorkspace({ currentUser, logout }) {
             isMobile={isMobile}
             activeConversation={activeConversation}
             activeMessages={activeMessages}
+            loadingMessages={loadingMessages}
             onBack={() => setMobileView("list")}
             onLogout={() => logout()}
+            onSendMessage={handleSendMessage}
           />
         ) : null}
       </Box>
+
+      {error ? (
+        <Alert severity="error" sx={{ mt: 1.5 }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      {loadingConversations && conversations.length === 0 ? (
+        <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
+          <CircularProgress size={16} />
+          Loading conversations...
+        </Box>
+      ) : null}
     </Box>
   );
 }
-

@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Divider,
   IconButton,
   InputAdornment,
@@ -26,7 +27,41 @@ import AssignmentReturnRoundedIcon from "@mui/icons-material/AssignmentReturnRou
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import PriorityPill from "./PriorityPill";
 
-export default function ChatPanel({ isMobile, activeConversation, activeMessages, onBack, onLogout }) {
+export default function ChatPanel({
+  isMobile,
+  activeConversation,
+  activeMessages,
+  loadingMessages,
+  onBack,
+  onLogout,
+  onSendMessage
+}) {
+  const [draftMessage, setDraftMessage] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+
+  const submitMessage = async () => {
+    const text = draftMessage.trim();
+    if (!text || sending) {
+      return;
+    }
+
+    setSending(true);
+    const result = await onSendMessage(text);
+    setSending(false);
+
+    if (result?.ok) {
+      setDraftMessage("");
+    }
+  };
+
+  if (!activeConversation) {
+    return (
+      <Box sx={{ display: "grid", placeItems: "center", minHeight: 280, color: "#64748b" }}>
+        Select a conversation to start supporting customers.
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, bgcolor: "#eef3fb" }}>
       <Box
@@ -79,47 +114,58 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
       </Box>
 
       <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 1.2, md: 3 }, py: 2 }}>
-        <Stack spacing={1.2}>
-          {activeMessages.map((message, index) => {
-            const isAgent = message.type === "agent";
-            return (
-              <Box
-                key={message.id}
-                sx={{
-                  alignSelf: isAgent ? "flex-end" : "flex-start",
-                  maxWidth: "min(78%, 680px)",
-                  animation: "rise 260ms ease",
-                  animationDelay: `${index * 40}ms`
-                }}
-              >
-                <Card
+        {loadingMessages ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#64748b" }}>
+            <CircularProgress size={16} />
+            Loading messages...
+          </Box>
+        ) : (
+          <Stack spacing={1.2}>
+            {activeMessages.map((message, index) => {
+              const isAgent = message.type === "agent";
+              return (
+                <Box
+                  key={message.id}
                   sx={{
-                    borderRadius: isAgent ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                    bgcolor: isAgent ? "#dbeafe" : "#ffffff",
-                    border: "1px solid",
-                    borderColor: isAgent ? "#bfdbfe" : "#e2e8f0",
-                    boxShadow: "none",
-                    transition: "transform 160ms ease, box-shadow 160ms ease",
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: "0 8px 16px rgba(15,23,42,0.08)"
-                    }
+                    alignSelf: isAgent ? "flex-end" : "flex-start",
+                    maxWidth: "min(78%, 680px)",
+                    animation: "rise 260ms ease",
+                    animationDelay: `${index * 40}ms`
                   }}
                 >
-                  <CardContent sx={{ p: "10px 12px !important" }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: 12.5, color: "#1e3a8a", mb: 0.5 }}>
-                      {message.author}
-                    </Typography>
-                    <Typography sx={{ fontSize: 13.5, color: "#0f172a" }}>{message.text}</Typography>
-                    <Typography sx={{ fontSize: 11, color: "#64748b", textAlign: "right", mt: 0.7 }}>
-                      {message.time}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-            );
-          })}
-        </Stack>
+                  <Card
+                    sx={{
+                      borderRadius: isAgent ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                      bgcolor: isAgent ? "#dbeafe" : "#ffffff",
+                      border: "1px solid",
+                      borderColor: isAgent ? "#bfdbfe" : "#e2e8f0",
+                      boxShadow: "none",
+                      transition: "transform 160ms ease, box-shadow 160ms ease",
+                      "&:hover": {
+                        transform: "translateY(-1px)",
+                        boxShadow: "0 8px 16px rgba(15,23,42,0.08)"
+                      }
+                    }}
+                  >
+                    <CardContent sx={{ p: "10px 12px !important" }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: 12.5, color: "#1e3a8a", mb: 0.5 }}>
+                        {message.author}
+                      </Typography>
+                      <Typography sx={{ fontSize: 13.5, color: "#0f172a" }}>{message.text}</Typography>
+                      <Typography sx={{ fontSize: 11, color: "#64748b", textAlign: "right", mt: 0.7 }}>
+                        {message.time}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+              );
+            })}
+
+            {!activeMessages.length ? (
+              <Box sx={{ color: "#64748b", fontSize: 14 }}>No messages yet.</Box>
+            ) : null}
+          </Stack>
+        )}
       </Box>
 
       <Divider />
@@ -140,6 +186,14 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
             placeholder="Write a reply to the customer..."
             multiline
             maxRows={4}
+            value={draftMessage}
+            onChange={(event) => setDraftMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submitMessage();
+              }
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -158,6 +212,8 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
           <Button
             variant="contained"
             endIcon={<SendRoundedIcon />}
+            disabled={sending || !draftMessage.trim()}
+            onClick={submitMessage}
             sx={{
               background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
               boxShadow: "0 10px 20px rgba(37,99,235,0.3)",
@@ -166,7 +222,7 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
               }
             }}
           >
-            Send
+            {sending ? "Sending..." : "Send"}
           </Button>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>

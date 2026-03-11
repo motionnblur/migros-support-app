@@ -3,7 +3,8 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const LOGIN_API_URL = "http://localhost:3000/auth/login";
+const SUPPORT_API_BASE_URL = process.env.SUPPORT_API_BASE_URL || "http://127.0.0.1:3000";
+const LOGIN_API_URL = `${SUPPORT_API_BASE_URL}/auth/login`;
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -23,14 +24,65 @@ const createWindow = () => {
   }
 };
 
+async function requestSupportApi({ path, method = "GET", token, body }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const headers = {
+      "Content-Type": "application/json"
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${SUPPORT_API_BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        error: data?.message || "Request failed",
+        detail: data
+      };
+    }
+
+    return {
+      ok: true,
+      status: response.status,
+      data
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      error: error instanceof Error ? error.message : "Unable to reach server"
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 ipcMain.handle("auth:login", async (_event, credentials) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
   try {
     const response = await fetch(LOGIN_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(credentials)
+      body: JSON.stringify(credentials),
+      signal: controller.signal
     });
 
     const data = await response.json().catch(() => null);
@@ -53,7 +105,54 @@ ipcMain.handle("auth:login", async (_event, credentials) => {
       status: 0,
       error: error instanceof Error ? error.message : "Unable to reach server"
     };
+  } finally {
+    clearTimeout(timeout);
   }
+});
+
+ipcMain.handle("support:get-conversations", async (_event, payload) => {
+  return requestSupportApi({
+    path: "/support/conversations",
+    method: "GET",
+    token: payload?.token
+  });
+});
+
+ipcMain.handle("support:get-messages", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  if (!conversationId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId is required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/messages`,
+    method: "GET",
+    token: payload?.token
+  });
+});
+
+ipcMain.handle("support:send-message", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  if (!conversationId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId is required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/messages`,
+    method: "POST",
+    token: payload?.token,
+    body: {
+      text: payload?.text
+    }
+  });
 });
 
 app.whenReady().then(() => {
