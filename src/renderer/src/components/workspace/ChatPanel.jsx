@@ -11,12 +11,16 @@ import {
   InputAdornment,
   Stack,
   TextField,
+  Tooltip,
   Typography
 } from "@mui/material";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import AttachFileRoundedIcon from "@mui/icons-material/AttachFileRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
+import SentimentSatisfiedAltRoundedIcon from "@mui/icons-material/SentimentSatisfiedAltRounded";
 import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
 import AssignmentReturnRoundedIcon from "@mui/icons-material/AssignmentReturnRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
@@ -28,12 +32,12 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
       <Box
         sx={{
           px: { xs: 1.5, md: 2.5 },
-          py: 1.4,
+          py: 1.2,
           borderBottom: "1px solid #dbe2ef",
           bgcolor: "#ffffff",
           display: "flex",
           alignItems: "center",
-          gap: 1.25
+          gap: 1
         }}
       >
         {isMobile ? (
@@ -56,7 +60,19 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
             {activeConversation.customer} | {activeConversation.channel}
           </Typography>
         </Box>
+
         <PriorityPill priority={activeConversation.priority} />
+
+        <Tooltip title="Search in chat">
+          <IconButton size="small" sx={{ border: "1px solid #e2e8f0" }}>
+            <SearchRoundedIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="More actions">
+          <IconButton size="small" sx={{ border: "1px solid #e2e8f0" }}>
+            <MoreVertRoundedIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Tooltip>
         <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon />} onClick={onLogout}>
           Logout
         </Button>
@@ -82,7 +98,12 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
                     bgcolor: isAgent ? "#dbeafe" : "#ffffff",
                     border: "1px solid",
                     borderColor: isAgent ? "#bfdbfe" : "#e2e8f0",
-                    boxShadow: "none"
+                    boxShadow: "none",
+                    transition: "transform 160ms ease, box-shadow 160ms ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 8px 16px rgba(15,23,42,0.08)"
+                    }
                   }}
                 >
                   <CardContent sx={{ p: "10px 12px !important" }}>
@@ -104,7 +125,13 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
       <Divider />
       <Box sx={{ p: { xs: 1.2, md: 1.7 }, bgcolor: "#ffffff" }}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <IconButton sx={{ border: "1px solid #dbe2ef" }}>
+          <IconButton
+            sx={{
+              border: "1px solid #dbe2ef",
+              transition: "all 180ms ease",
+              "&:hover": { transform: "rotate(-8deg)", bgcolor: "#eff6ff" }
+            }}
+          >
             <AttachFileRoundedIcon fontSize="small" />
           </IconButton>
           <TextField
@@ -114,6 +141,11 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
             multiline
             maxRows={4}
             InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SentimentSatisfiedAltRoundedIcon sx={{ color: "#64748b", fontSize: 18 }} />
+                </InputAdornment>
+              ),
               endAdornment: (
                 <InputAdornment position="end">
                   <Typography variant="caption" sx={{ color: "#64748b" }}>
@@ -123,14 +155,34 @@ export default function ChatPanel({ isMobile, activeConversation, activeMessages
               )
             }}
           />
-          <Button variant="contained" endIcon={<SendRoundedIcon />}>
+          <Button
+            variant="contained"
+            endIcon={<SendRoundedIcon />}
+            sx={{
+              background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+              boxShadow: "0 10px 20px rgba(37,99,235,0.3)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)"
+              }
+            }}
+          >
             Send
           </Button>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-          <Chip size="small" icon={<ReportProblemRoundedIcon />} label="Escalate" />
-          <Chip size="small" icon={<AssignmentReturnRoundedIcon />} label="Refund template" />
-          <Chip size="small" icon={<LocalShippingRoundedIcon />} label="Track shipment" />
+          <Chip size="small" icon={<ReportProblemRoundedIcon />} label="Escalate" sx={{ "&:hover": { bgcolor: "#fee2e2" } }} />
+          <Chip
+            size="small"
+            icon={<AssignmentReturnRoundedIcon />}
+            label="Refund template"
+            sx={{ "&:hover": { bgcolor: "#e0f2fe" } }}
+          />
+          <Chip
+            size="small"
+            icon={<LocalShippingRoundedIcon />}
+            label="Track shipment"
+            sx={{ "&:hover": { bgcolor: "#ede9fe" } }}
+          />
         </Stack>
       </Box>
     </Box>

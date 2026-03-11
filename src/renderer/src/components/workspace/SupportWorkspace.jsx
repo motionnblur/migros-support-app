@@ -10,7 +10,7 @@ import ChatPanel from "./ChatPanel";
 import { mockConversations, mockMessages } from "../../data/mockSupportData";
 
 const navActions = [
-  { id: "inbox", icon: ForumRoundedIcon, label: "Inbox", active: true },
+  { id: "inbox", icon: ForumRoundedIcon, label: "Inbox" },
   { id: "dashboard", icon: DashboardRoundedIcon, label: "Dashboard" },
   { id: "insights", icon: InsightsRoundedIcon, label: "Insights" },
   { id: "settings", icon: SettingsRoundedIcon, label: "Settings" }
@@ -20,6 +20,7 @@ export default function SupportWorkspace({ currentUser, logout }) {
   const isMobile = useMediaQuery("(max-width:900px)");
   const [selectedConversationId, setSelectedConversationId] = React.useState(mockConversations[0].id);
   const [mobileView, setMobileView] = React.useState("list");
+  const [activeNav, setActiveNav] = React.useState("inbox");
 
   const activeConversation =
     mockConversations.find((conversation) => conversation.id === selectedConversationId) || mockConversations[0];
@@ -27,6 +28,7 @@ export default function SupportWorkspace({ currentUser, logout }) {
 
   const handleSelectConversation = (conversationId) => {
     setSelectedConversationId(conversationId);
+    setActiveNav("inbox");
     if (isMobile) {
       setMobileView("chat");
     }
@@ -41,6 +43,10 @@ export default function SupportWorkspace({ currentUser, logout }) {
         "@keyframes rise": {
           from: { opacity: 0, transform: "translateY(10px)" },
           to: { opacity: 1, transform: "translateY(0)" }
+        },
+        "@keyframes pulseGlow": {
+          "0%": { boxShadow: "0 0 0 0 rgba(59,130,246,0.45)" },
+          "100%": { boxShadow: "0 0 0 10px rgba(59,130,246,0)" }
         },
         minHeight: "100vh",
         p: { xs: 1, md: 2 },
@@ -82,7 +88,8 @@ export default function SupportWorkspace({ currentUser, logout }) {
               display: "grid",
               placeItems: "center",
               bgcolor: "#2563eb",
-              color: "white"
+              color: "white",
+              animation: "pulseGlow 2.2s infinite"
             }}
           >
             <ForumRoundedIcon fontSize="small" />
@@ -90,18 +97,25 @@ export default function SupportWorkspace({ currentUser, logout }) {
 
           {navActions.map((action) => {
             const ActionIcon = action.icon;
+            const isActive = action.id === activeNav;
+
             return (
-              <Tooltip key={action.id} title={action.label} placement="right">
+              <Tooltip key={action.id} title={action.label} placement="right" arrow>
                 <IconButton
                   size="small"
+                  onClick={() => setActiveNav(action.id)}
                   sx={{
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     borderRadius: 2,
-                    bgcolor: action.active ? "#1d4ed8" : "#1e293b",
+                    background: isActive ? "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)" : "#1e293b",
                     color: "#e2e8f0",
+                    border: isActive ? "1px solid #60a5fa" : "1px solid transparent",
+                    boxShadow: isActive ? "0 8px 18px rgba(37,99,235,0.45)" : "none",
+                    transition: "all 180ms ease",
                     "&:hover": {
-                      bgcolor: action.active ? "#1e40af" : "#334155"
+                      transform: "translateY(-1px) scale(1.03)",
+                      background: isActive ? "linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)" : "#334155"
                     }
                   }}
                 >
@@ -112,7 +126,14 @@ export default function SupportWorkspace({ currentUser, logout }) {
           })}
 
           <Box sx={{ mt: "auto", mb: 1 }}>
-            <Avatar sx={{ bgcolor: "#334155", width: 34, height: 34 }}>
+            <Avatar
+              sx={{
+                bgcolor: "#334155",
+                width: 34,
+                height: 34,
+                border: "2px solid #475569"
+              }}
+            >
               {currentUser?.username?.[0]?.toUpperCase() || "U"}
             </Avatar>
           </Box>
@@ -139,3 +160,4 @@ export default function SupportWorkspace({ currentUser, logout }) {
     </Box>
   );
 }
+
