@@ -10,7 +10,8 @@ const createWindow = () => {
     height: 720,
     webPreferences: {
       preload: join(__dirname, "../preload/index.js")
-    }
+    },
+      autoHideMenuBar: true,
   });
 
   const devServerUrl = process.env.ELECTRON_RENDERER_URL || process.env.VITE_DEV_SERVER_URL;
