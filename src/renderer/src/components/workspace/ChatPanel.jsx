@@ -121,16 +121,14 @@ export default function ChatPanel({
           </Box>
         ) : (
           <Stack spacing={1.2}>
-            {activeMessages.map((message, index) => {
+            {activeMessages.map((message) => {
               const isAgent = message.type === "agent";
               return (
                 <Box
                   key={message.id}
                   sx={{
                     alignSelf: isAgent ? "flex-end" : "flex-start",
-                    maxWidth: "min(78%, 680px)",
-                    animation: "rise 260ms ease",
-                    animationDelay: `${index * 40}ms`
+                    maxWidth: "min(78%, 680px)"
                   }}
                 >
                   <Card

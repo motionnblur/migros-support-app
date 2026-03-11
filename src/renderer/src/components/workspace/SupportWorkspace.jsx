@@ -50,6 +50,53 @@ function formatMessage(rawMessage) {
   };
 }
 
+function areConversationsEqual(left, right) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  for (let i = 0; i < left.length; i += 1) {
+    const a = left[i];
+    const b = right[i];
+
+    if (
+      a.id !== b.id ||
+      a.preview !== b.preview ||
+      a.time !== b.time ||
+      a.unread !== b.unread ||
+      a.priority !== b.priority ||
+      a.customer !== b.customer
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function areMessagesEqual(left, right) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  for (let i = 0; i < left.length; i += 1) {
+    const a = left[i];
+    const b = right[i];
+
+    if (
+      a.id !== b.id ||
+      a.type !== b.type ||
+      a.author !== b.author ||
+      a.text !== b.text ||
+      a.time !== b.time
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const isMobile = useMediaQuery("(max-width:900px)");
   const [conversations, setConversations] = React.useState([]);
@@ -75,28 +122,45 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     }
 
     const formatted = Array.isArray(result.data) ? result.data.map(formatConversation) : [];
-    setConversations(formatted);
 
-    if (!selectedConversationId && formatted.length > 0) {
-      setSelectedConversationId(formatted[0].id);
-    }
+    setConversations((previous) => {
+      if (areConversationsEqual(previous, formatted)) {
+        return previous;
+      }
 
-    if (selectedConversationId && !formatted.some((conversation) => conversation.id === selectedConversationId)) {
-      setSelectedConversationId(formatted[0]?.id || "");
-    }
+      return formatted;
+    });
+
+    setSelectedConversationId((previousSelectedId) => {
+      if (!previousSelectedId && formatted.length > 0) {
+        return formatted[0].id;
+      }
+
+      if (previousSelectedId && !formatted.some((conversation) => conversation.id === previousSelectedId)) {
+        return formatted[0]?.id || "";
+      }
+
+      return previousSelectedId;
+    });
 
     setError("");
-  }, [accessToken, logout, selectedConversationId]);
+  }, [accessToken, logout]);
 
   const fetchMessages = React.useCallback(
-    async (conversationId) => {
+    async (conversationId, options = {}) => {
       if (!conversationId) {
         return;
       }
 
-      setLoadingMessages(true);
+      if (options.showLoader) {
+        setLoadingMessages(true);
+      }
+
       const result = await window.electronAPI.getMessages(accessToken, conversationId);
-      setLoadingMessages(false);
+
+      if (options.showLoader) {
+        setLoadingMessages(false);
+      }
 
       if (!result.ok) {
         if (result.status === 401) {
@@ -109,10 +173,18 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       }
 
       const formatted = Array.isArray(result.data) ? result.data.map(formatMessage) : [];
-      setMessagesByConversation((previous) => ({
-        ...previous,
-        [conversationId]: formatted
-      }));
+      setMessagesByConversation((previous) => {
+        const previousMessages = previous[conversationId] || [];
+        if (areMessagesEqual(previousMessages, formatted)) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          [conversationId]: formatted
+        };
+      });
+
       setError("");
     },
     [accessToken, logout]
@@ -143,10 +215,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return undefined;
     }
 
-    fetchMessages(selectedConversationId);
+    fetchMessages(selectedConversationId, { showLoader: true });
 
     const interval = setInterval(() => {
-      fetchMessages(selectedConversationId);
+      fetchMessages(selectedConversationId, { showLoader: false });
     }, 4000);
 
     return () => clearInterval(interval);
@@ -175,7 +247,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return { ok: false, error: result.error || "Failed to send message" };
     }
 
-    await Promise.all([fetchMessages(selectedConversationId), fetchConversations()]);
+    await Promise.all([
+      fetchMessages(selectedConversationId, { showLoader: false }),
+      fetchConversations()
+    ]);
     return { ok: true };
   };
 
