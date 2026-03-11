@@ -1,5 +1,6 @@
-﻿import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  ping: () => "pong"
+  ping: () => "pong",
+  login: (credentials) => ipcRenderer.invoke("auth:login", credentials)
 });
