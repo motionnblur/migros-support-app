@@ -38,6 +38,18 @@ export default function ChatPanel({
 }) {
   const [draftMessage, setDraftMessage] = React.useState("");
   const [sending, setSending] = React.useState(false);
+  const messagesContainerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!messagesContainerRef.current) {
+      return;
+    }
+
+    const container = messagesContainerRef.current;
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
+  }, [activeConversation?.id, activeMessages]);
 
   const submitMessage = async () => {
     const text = draftMessage.trim();
@@ -113,7 +125,7 @@ export default function ChatPanel({
         </Button>
       </Box>
 
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: { xs: 1.2, md: 3 }, py: 2 }}> 
+      <Box ref={messagesContainerRef} sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: { xs: 1.2, md: 3 }, py: 2 }}>
         {loadingMessages ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#64748b" }}>
             <CircularProgress size={16} />
@@ -242,4 +254,3 @@ export default function ChatPanel({
     </Box>
   );
 }
-
