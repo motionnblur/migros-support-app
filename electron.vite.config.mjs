@@ -1,4 +1,4 @@
-﻿import { defineConfig } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
@@ -7,7 +7,15 @@ export default defineConfig({
     entry: "src/main/index.js"
   },
   preload: {
-    entry: "src/preload/index.js"
+    entry: "src/preload/index.js",
+    build: {
+      rollupOptions: {
+        output: {
+          format: "cjs",
+          entryFileNames: "index.js"
+        }
+      }
+    }
   },
   renderer: {
     resolve: {

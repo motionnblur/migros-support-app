@@ -1,4 +1,4 @@
-﻿import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -13,9 +13,9 @@ const createWindow = () => {
     }
   });
 
-  if (process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(process.env.VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools({ mode: "detach" });
+  const devServerUrl = process.env.ELECTRON_RENDERER_URL || process.env.VITE_DEV_SERVER_URL;
+  if (devServerUrl) {
+    win.loadURL(devServerUrl);
   } else {
     win.loadFile(join(__dirname, "../renderer/index.html"));
   }
