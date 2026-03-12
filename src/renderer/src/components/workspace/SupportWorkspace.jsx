@@ -47,7 +47,7 @@ function formatMessage(rawMessage) {
     id: rawMessage?.id || rawMessage?.messageId,
     messageId: rawMessage?.messageId || String(rawMessage?.id || ""),
     type: isAgent ? "agent" : "customer",
-    author: isAgent ? "Support Agent" : rawMessage?.customerId || "Customer",
+    author: isAgent ? "Siz" : rawMessage?.customerId || "Customer",
     text: rawMessage?.text || "",
     time,
     canEdit: Boolean(rawMessage?.canEdit),
