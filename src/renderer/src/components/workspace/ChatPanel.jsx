@@ -16,7 +16,6 @@ import {
   Typography
 } from "@mui/material";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SentimentSatisfiedAltRoundedIcon from "@mui/icons-material/SentimentSatisfiedAltRounded";
@@ -35,7 +34,6 @@ export default function ChatPanel({
   activeMessages,
   loadingMessages,
   onBack,
-  onLogout,
   onSendMessage,
   onEditMessage,
   onDeleteMessage,
@@ -254,10 +252,6 @@ export default function ChatPanel({
             </IconButton>
           </span>
         </Tooltip>
-
-        <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon />} onClick={onLogout}>
-          Logout
-        </Button>
       </Box>
 
       {conversationActionsDisabled ? (

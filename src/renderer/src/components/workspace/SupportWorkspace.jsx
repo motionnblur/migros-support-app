@@ -3,6 +3,7 @@ import { Alert, Avatar, Box, CircularProgress, IconButton, Tooltip } from "@mui/
 import { useMediaQuery } from "@mui/material";
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import ConversationList from "./ConversationList";
 import ChatPanel from "./ChatPanel";
 
@@ -649,7 +650,29 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             );
           })}
 
-          <Box sx={{ mt: "auto", mb: 1 }}>
+          <Box sx={{ mt: "auto", mb: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.2 }}>
+            <Tooltip title="Logout" placement="right" arrow>
+              <IconButton
+                size="small"
+                onClick={() => logout()}
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  background: "#1e293b",
+                  color: "#fecaca",
+                  border: "1px solid #7f1d1d",
+                  transition: "all 180ms ease",
+                  "&:hover": {
+                    transform: "translateY(-1px) scale(1.03)",
+                    background: "#334155",
+                    color: "#fee2e2"
+                  }
+                }}
+              >
+                <LogoutRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Avatar
               sx={{
                 bgcolor: "#334155",
@@ -684,7 +707,6 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             activeMessages={activeMessages}
             loadingMessages={loadingMessages}
             onBack={() => setMobileView("list")}
-            onLogout={() => logout()}
             onSendMessage={handleSendMessage}
             onEditMessage={handleEditMessage}
             onDeleteMessage={handleDeleteMessage}
