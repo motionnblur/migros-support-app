@@ -9,9 +9,6 @@ import ConversationList from "./ConversationList";
 import ChatPanel from "./ChatPanel";
 
 const navActions = [
-  { id: "inbox", icon: ForumRoundedIcon, label: "Inbox" },
-  { id: "dashboard", icon: DashboardRoundedIcon, label: "Dashboard" },
-  { id: "insights", icon: InsightsRoundedIcon, label: "Insights" },
   { id: "settings", icon: SettingsRoundedIcon, label: "Settings" }
 ];
 

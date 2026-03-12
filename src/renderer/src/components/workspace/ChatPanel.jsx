@@ -187,12 +187,6 @@ export default function ChatPanel({
           </span>
                 </Tooltip>
 
-                <Tooltip title="More actions">
-                    <IconButton size="small" sx={{border: "1px solid #e2e8f0"}}>
-                        <MoreVertRoundedIcon sx={{fontSize: 18}}/>
-                    </IconButton>
-                </Tooltip>
-
                 <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon/>}
                         onClick={onLogout}>
                     Logout
