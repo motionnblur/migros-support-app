@@ -312,22 +312,6 @@ export default function ChatPanel({
                         {sending ? "Sending..." : "Send"}
                     </Button>
                 </Stack>
-                <Stack direction="row" spacing={1} sx={{mt: 1}}>
-                    <Chip size="small" icon={<ReportProblemRoundedIcon/>} label="Escalate"
-                          sx={{"&:hover": {bgcolor: "#fee2e2"}}}/>
-                    <Chip
-                        size="small"
-                        icon={<AssignmentReturnRoundedIcon/>}
-                        label="Refund template"
-                        sx={{"&:hover": {bgcolor: "#e0f2fe"}}}
-                    />
-                    <Chip
-                        size="small"
-                        icon={<LocalShippingRoundedIcon/>}
-                        label="Track shipment"
-                        sx={{"&:hover": {bgcolor: "#ede9fe"}}}
-                    />
-                </Stack>
             </Box>
         </Box>
     );
