@@ -1,5 +1,14 @@
 import React from "react";
-import { Avatar, Badge, Box, Chip, InputAdornment, Stack, TextField, Typography } from "@mui/material";
+import {
+  Avatar,
+  Badge,
+  Box,
+  Chip,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography
+} from "@mui/material";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import SmartphoneRoundedIcon from "@mui/icons-material/SmartphoneRounded";
@@ -19,8 +28,19 @@ function ChannelIcon({ channel }) {
   return <LanguageRoundedIcon sx={{ fontSize: 14, color: "#0891b2" }} />;
 }
 
-export default function ConversationList({ conversations, activeConversationId, onSelectConversation, loading }) {
+export default function ConversationList({
+  conversations,
+  activeConversationId,
+  onSelectConversation,
+  loading,
+  customerSearchQuery,
+  onCustomerSearchQueryChange,
+  customerSearchResults,
+  customerSearchLoading,
+  onSelectCustomer
+}) {
   const hasConversations = conversations.length > 0;
+  const hasSearchQuery = Boolean(customerSearchQuery.trim());
 
   return (
     <Box
@@ -40,19 +60,22 @@ export default function ConversationList({ conversations, activeConversationId, 
       <Box sx={{ px: 2, py: 2, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.2 }}>
-            Mesaj Kutusu
+            Message Inbox
           </Typography>
           <Chip
             icon={<LanguageRoundedIcon sx={{ fontSize: "16px !important" }} />}
-            label="Canlı"
+            label="Live"
             size="small"
             sx={{ bgcolor: "#dcfce7", color: "#166534", fontWeight: 700 }}
           />
         </Stack>
+
         <TextField
           size="small"
           fullWidth
-          placeholder="Mesaj kutusunda ara"
+          value={customerSearchQuery}
+          onChange={(event) => onCustomerSearchQueryChange(event.target.value)}
+          placeholder="Search customer by email or name"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -61,6 +84,70 @@ export default function ConversationList({ conversations, activeConversationId, 
             )
           }}
         />
+
+        {hasSearchQuery ? (
+          <Box
+            sx={{
+              mt: 1,
+              border: "1px solid #e2e8f0",
+              borderRadius: 1.5,
+              bgcolor: "#f8fafc",
+              maxHeight: 180,
+              overflowY: "auto",
+              p: 0.75
+            }}
+          >
+            {customerSearchLoading ? (
+              <Typography sx={{ fontSize: 12.5, color: "#64748b", p: 0.5 }}>
+                Searching customers...
+              </Typography>
+            ) : customerSearchResults.length ? (
+              customerSearchResults.map((customer) => (
+                <Box
+                  key={customer.userMail}
+                  onClick={() => onSelectCustomer(customer)}
+                  sx={{
+                    cursor: "pointer",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 1.25,
+                    p: 0.75,
+                    bgcolor: "#ffffff",
+                    mb: 0.6,
+                    "&:last-of-type": { mb: 0 },
+                    "&:hover": { bgcolor: "#eff6ff", borderColor: "#bfdbfe" }
+                  }}
+                >
+                  <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="center">
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 12.5, fontWeight: 700 }} noWrap>
+                        {customer.displayName}
+                      </Typography>
+                      <Typography sx={{ fontSize: 11.5, color: "#475569" }} noWrap>
+                        {customer.userMail}
+                      </Typography>
+                    </Box>
+                    <Stack alignItems="flex-end" spacing={0.3}>
+                      {customer.hasConversation ? (
+                        <Chip size="small" label="In inbox" sx={{ height: 18, fontSize: 10 }} />
+                      ) : null}
+                      {customer.isBanned ? (
+                        <Chip
+                          size="small"
+                          label="Banned"
+                          sx={{ height: 18, fontSize: 10, bgcolor: "#fee2e2", color: "#991b1b" }}
+                        />
+                      ) : null}
+                    </Stack>
+                  </Stack>
+                </Box>
+              ))
+            ) : (
+              <Typography sx={{ fontSize: 12.5, color: "#64748b", p: 0.5 }}>
+                No customers found.
+              </Typography>
+            )}
+          </Box>
+        ) : null}
       </Box>
 
       <Stack spacing={0} sx={{ overflowY: "auto", p: 1, minHeight: 0 }}>
@@ -171,6 +258,3 @@ export default function ConversationList({ conversations, activeConversationId, 
     </Box>
   );
 }
-
-
-

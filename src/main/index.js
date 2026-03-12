@@ -118,6 +118,24 @@ ipcMain.handle("support:get-conversations", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("support:search-customers", async (_event, payload) => {
+  const query = typeof payload?.query === "string" ? payload.query.trim() : "";
+  const limit = Math.min(Math.max(Number(payload?.limit) || 20, 1), 100);
+  const searchParams = new URLSearchParams();
+
+  if (query) {
+    searchParams.set("query", query);
+  }
+
+  searchParams.set("limit", String(limit));
+
+  return requestSupportApi({
+    path: `/support/customers?${searchParams.toString()}`,
+    method: "GET",
+    token: payload?.token
+  });
+});
+
 ipcMain.handle("support:get-messages", async (_event, payload) => {
   const conversationId = payload?.conversationId;
   if (!conversationId) {
@@ -174,6 +192,25 @@ ipcMain.handle("support:edit-message", async (_event, payload) => {
     body: {
       text: payload?.text
     }
+  });
+});
+
+ipcMain.handle("support:delete-message", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  const messageId = payload?.messageId;
+
+  if (!conversationId || !messageId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId and messageId are required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+    method: "DELETE",
+    token: payload?.token
   });
 });
 ipcMain.handle("support:ban-conversation", async (_event, payload) => {

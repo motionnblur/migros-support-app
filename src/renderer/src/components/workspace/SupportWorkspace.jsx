@@ -2,21 +2,18 @@ import React from "react";
 import { Alert, Avatar, Box, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ConversationList from "./ConversationList";
 import ChatPanel from "./ChatPanel";
 
-const navActions = [
-  { id: "settings", icon: SettingsRoundedIcon, label: "Settings" }
-];
+const navActions = [{ id: "settings", icon: SettingsRoundedIcon, label: "Settings" }];
 
 function formatConversation(rawConversation) {
   const date = rawConversation?.lastMessageAt ? new Date(rawConversation.lastMessageAt) : null;
-  const time = date && !Number.isNaN(date.getTime())
-    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "--:--";
+  const time =
+    date && !Number.isNaN(date.getTime())
+      ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "--:--";
 
   return {
     id: rawConversation?.conversationId,
@@ -25,7 +22,12 @@ function formatConversation(rawConversation) {
     preview: rawConversation?.lastMessagePreview || "No messages yet",
     time,
     unread: Number(rawConversation?.unreadCount || 0),
-    priority: Number(rawConversation?.unreadCount || 0) > 5 ? "Urgent" : Number(rawConversation?.unreadCount || 0) > 0 ? "High" : "Normal",
+    priority:
+      Number(rawConversation?.unreadCount || 0) > 5
+        ? "Urgent"
+        : Number(rawConversation?.unreadCount || 0) > 0
+          ? "High"
+          : "Normal",
     channel: "Website",
     isBanned: Boolean(rawConversation?.isBanned)
   };
@@ -33,9 +35,10 @@ function formatConversation(rawConversation) {
 
 function formatMessage(rawMessage) {
   const date = rawMessage?.occurredAt ? new Date(rawMessage.occurredAt) : null;
-  const time = date && !Number.isNaN(date.getTime())
-    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "--:--";
+  const time =
+    date && !Number.isNaN(date.getTime())
+      ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "--:--";
 
   const isAgent = rawMessage?.sender === "AGENT" || rawMessage?.sender === "MANAGEMENT";
 
@@ -48,6 +51,16 @@ function formatMessage(rawMessage) {
     time,
     canEdit: Boolean(rawMessage?.canEdit),
     editedAt: rawMessage?.editedAt || null
+  };
+}
+
+function formatCustomerSearchResult(rawCustomer) {
+  const fullName = [rawCustomer?.userName, rawCustomer?.userLastName].filter(Boolean).join(" ").trim();
+  return {
+    userMail: rawCustomer?.userMail || "",
+    displayName: fullName || rawCustomer?.userMail || "Customer",
+    isBanned: Boolean(rawCustomer?.isBanned),
+    hasConversation: Boolean(rawCustomer?.hasConversation)
   };
 }
 
@@ -106,6 +119,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const isMobile = useMediaQuery("(max-width:900px)");
   const [conversations, setConversations] = React.useState([]);
   const [selectedConversationId, setSelectedConversationId] = React.useState("");
+  const [selectedCustomer, setSelectedCustomer] = React.useState(null);
   const [messagesByConversation, setMessagesByConversation] = React.useState({});
   const [mobileView, setMobileView] = React.useState("list");
   const [activeNav, setActiveNav] = React.useState("inbox");
@@ -113,6 +127,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const [loadingMessages, setLoadingMessages] = React.useState(false);
   const [actionBusy, setActionBusy] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [customerSearchQuery, setCustomerSearchQuery] = React.useState("");
+  const [customerSearchResults, setCustomerSearchResults] = React.useState([]);
+  const [customerSearchLoading, setCustomerSearchLoading] = React.useState(false);
+  const customerSearchDebounceRef = React.useRef(null);
 
   const fetchConversations = React.useCallback(async () => {
     const result = await window.electronAPI.getConversations(accessToken);
@@ -137,24 +155,47 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return formatted;
     });
 
+    if (selectedCustomer && formatted.some((conversation) => conversation.id === selectedCustomer.userMail)) {
+      setSelectedCustomer(null);
+    }
+
     setSelectedConversationId((previousSelectedId) => {
       if (!previousSelectedId && formatted.length > 0) {
         return formatted[0].id;
       }
 
-      if (previousSelectedId && !formatted.some((conversation) => conversation.id === previousSelectedId)) {
-        return formatted[0]?.id || "";
+      if (previousSelectedId && formatted.some((conversation) => conversation.id === previousSelectedId)) {
+        return previousSelectedId;
       }
 
-      return previousSelectedId;
+      if (selectedCustomer && previousSelectedId === selectedCustomer.userMail) {
+        return previousSelectedId;
+      }
+
+      return formatted[0]?.id || "";
     });
 
     setError("");
-  }, [accessToken, logout]);
+  }, [accessToken, logout, selectedCustomer]);
 
   const fetchMessages = React.useCallback(
     async (conversationId, options = {}) => {
       if (!conversationId) {
+        return;
+      }
+
+      const hasRealConversation = conversations.some((conversation) => conversation.id === conversationId);
+      if (!hasRealConversation) {
+        setMessagesByConversation((previous) => {
+          if (previous[conversationId]) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            [conversationId]: []
+          };
+        });
         return;
       }
 
@@ -193,7 +234,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
       setError("");
     },
-    [accessToken, logout]
+    [accessToken, conversations, logout]
   );
 
   React.useEffect(() => {
@@ -221,6 +262,12 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return undefined;
     }
 
+    const hasRealConversation = conversations.some((conversation) => conversation.id === selectedConversationId);
+    if (!hasRealConversation) {
+      setLoadingMessages(false);
+      return undefined;
+    }
+
     fetchMessages(selectedConversationId, { showLoader: true });
 
     const interval = setInterval(() => {
@@ -228,11 +275,86 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [fetchMessages, selectedConversationId]);
+  }, [conversations, fetchMessages, selectedConversationId]);
+
+  React.useEffect(() => {
+    const query = customerSearchQuery.trim();
+
+    if (customerSearchDebounceRef.current) {
+      clearTimeout(customerSearchDebounceRef.current);
+      customerSearchDebounceRef.current = null;
+    }
+
+    if (!query) {
+      setCustomerSearchResults([]);
+      setCustomerSearchLoading(false);
+      return undefined;
+    }
+
+    customerSearchDebounceRef.current = setTimeout(async () => {
+      setCustomerSearchLoading(true);
+
+      const result = await window.electronAPI.searchCustomers(accessToken, query, 20);
+      setCustomerSearchLoading(false);
+
+      if (!result.ok) {
+        if (result.status === 401) {
+          logout("Session expired. Please sign in again.");
+          return;
+        }
+
+        setError(result.error || "Failed to search customers");
+        return;
+      }
+
+      const formatted = Array.isArray(result.data) ? result.data.map(formatCustomerSearchResult) : [];
+      setCustomerSearchResults(formatted.filter((customer) => customer.userMail));
+      setError("");
+    }, 350);
+
+    return () => {
+      if (customerSearchDebounceRef.current) {
+        clearTimeout(customerSearchDebounceRef.current);
+        customerSearchDebounceRef.current = null;
+      }
+    };
+  }, [accessToken, customerSearchQuery, logout]);
 
   const handleSelectConversation = (conversationId) => {
     setSelectedConversationId(conversationId);
+    setSelectedCustomer(null);
     setActiveNav("inbox");
+    if (isMobile) {
+      setMobileView("chat");
+    }
+  };
+
+  const handleSelectCustomer = (customer) => {
+    if (!customer?.userMail) {
+      return;
+    }
+
+    if (conversations.some((conversation) => conversation.id === customer.userMail)) {
+      handleSelectConversation(customer.userMail);
+      return;
+    }
+
+    setSelectedConversationId(customer.userMail);
+    setSelectedCustomer(customer);
+    setMessagesByConversation((previous) => {
+      if (previous[customer.userMail]) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [customer.userMail]: []
+      };
+    });
+
+    setActiveNav("inbox");
+    setError("");
+
     if (isMobile) {
       setMobileView("chat");
     }
@@ -243,8 +365,17 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return { ok: false, error: "No conversation selected" };
     }
 
-    const activeConversation = conversations.find((conversation) => conversation.id === selectedConversationId);
-    if (activeConversation?.isBanned) {
+    const activeConversationFromList = conversations.find((conversation) => conversation.id === selectedConversationId);
+    const selectedConversation =
+      activeConversationFromList ||
+      (selectedCustomer && selectedCustomer.userMail === selectedConversationId
+        ? {
+            id: selectedCustomer.userMail,
+            isBanned: selectedCustomer.isBanned
+          }
+        : null);
+
+    if (selectedConversation?.isBanned) {
       const banError = "This user is banned. You cannot send new messages.";
       setError(banError);
       return { ok: false, error: banError };
@@ -260,10 +391,9 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return { ok: false, error: result.error || "Failed to send message" };
     }
 
-    await Promise.all([
-      fetchMessages(selectedConversationId, { showLoader: false }),
-      fetchConversations()
-    ]);
+    await fetchConversations();
+    await fetchMessages(selectedConversationId, { showLoader: false });
+
     return { ok: true };
   };
 
@@ -286,17 +416,53 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       return { ok: false, error: result.error || "Failed to edit message" };
     }
 
-    await Promise.all([
-      fetchMessages(selectedConversationId, { showLoader: false }),
-      fetchConversations()
-    ]);
+    await Promise.all([fetchMessages(selectedConversationId, { showLoader: false }), fetchConversations()]);
 
     return { ok: true };
   };
 
-  const handleBanConversation = async () => {
-    if (!selectedConversationId || actionBusy) {
+  const handleDeleteMessage = async (messageId) => {
+    if (!selectedConversationId) {
       return { ok: false, error: "No conversation selected" };
+    }
+
+    if (!messageId) {
+      return { ok: false, error: "Message id is missing" };
+    }
+
+    const result = await window.electronAPI.deleteMessage(accessToken, selectedConversationId, messageId);
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+      } else {
+        setError(result.error || "Failed to delete message");
+      }
+      return { ok: false, error: result.error || "Failed to delete message" };
+    }
+
+    if (result.data?.conversationRemoved) {
+      setMessagesByConversation((previous) => {
+        const next = { ...previous };
+        delete next[selectedConversationId];
+        return next;
+      });
+
+      await fetchConversations();
+      return { ok: true };
+    }
+
+    await Promise.all([fetchMessages(selectedConversationId, { showLoader: false }), fetchConversations()]);
+
+    return { ok: true };
+  };
+
+  const isSelectedConversationReal = conversations.some(
+    (conversation) => conversation.id === selectedConversationId
+  );
+
+  const handleBanConversation = async () => {
+    if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
+      return { ok: false, error: "Conversation action unavailable" };
     }
 
     setActionBusy(true);
@@ -318,10 +484,9 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     return { ok: true };
   };
 
-
   const handleUnbanConversation = async () => {
-    if (!selectedConversationId || actionBusy) {
-      return { ok: false, error: "No conversation selected" };
+    if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
+      return { ok: false, error: "Conversation action unavailable" };
     }
 
     setActionBusy(true);
@@ -342,9 +507,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     setError("");
     return { ok: true };
   };
+
   const handleClearConversation = async () => {
-    if (!selectedConversationId || actionBusy) {
-      return { ok: false, error: "No conversation selected" };
+    if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
+      return { ok: false, error: "Conversation action unavailable" };
     }
 
     setActionBusy(true);
@@ -373,7 +539,22 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     return { ok: true };
   };
 
-  const activeConversation = conversations.find((conversation) => conversation.id === selectedConversationId) || null;
+  const activeConversation =
+    conversations.find((conversation) => conversation.id === selectedConversationId) ||
+    (selectedCustomer && selectedCustomer.userMail === selectedConversationId
+      ? {
+          id: selectedCustomer.userMail,
+          name: selectedCustomer.displayName,
+          customer: selectedCustomer.userMail,
+          preview: "No messages yet",
+          time: "--:--",
+          unread: 0,
+          priority: "Normal",
+          channel: "Website",
+          isBanned: selectedCustomer.isBanned
+        }
+      : null);
+
   const activeMessages = activeConversation ? messagesByConversation[activeConversation.id] || [] : [];
 
   const showList = !isMobile || mobileView === "list";
@@ -488,6 +669,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             activeConversationId={activeConversation?.id || ""}
             onSelectConversation={handleSelectConversation}
             loading={loadingConversations}
+            customerSearchQuery={customerSearchQuery}
+            onCustomerSearchQueryChange={setCustomerSearchQuery}
+            customerSearchResults={customerSearchResults}
+            customerSearchLoading={customerSearchLoading}
+            onSelectCustomer={handleSelectCustomer}
           />
         ) : null}
 
@@ -501,10 +687,12 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             onLogout={() => logout()}
             onSendMessage={handleSendMessage}
             onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
             onBanConversation={handleBanConversation}
             onUnbanConversation={handleUnbanConversation}
             onClearConversation={handleClearConversation}
             actionBusy={actionBusy}
+            conversationActionsDisabled={!isSelectedConversationReal}
           />
         ) : null}
       </Box>
@@ -524,9 +712,3 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     </Box>
   );
 }
-
-
-
-
-
-
