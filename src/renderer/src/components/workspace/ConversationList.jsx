@@ -40,11 +40,11 @@ export default function ConversationList({ conversations, activeConversationId, 
       <Box sx={{ px: 2, py: 2, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.2 }}>
-            Support Inbox
+            Mesaj Kutusu
           </Typography>
           <Chip
             icon={<LanguageRoundedIcon sx={{ fontSize: "16px !important" }} />}
-            label="Live"
+            label="Canlı"
             size="small"
             sx={{ bgcolor: "#dcfce7", color: "#166534", fontWeight: 700 }}
           />
@@ -52,7 +52,7 @@ export default function ConversationList({ conversations, activeConversationId, 
         <TextField
           size="small"
           fullWidth
-          placeholder="Search conversations, users, orders"
+          placeholder="Mesaj kutusunda ara"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">

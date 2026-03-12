@@ -26,17 +26,14 @@ export default function LoginView({ username, password, loading, error, onUserna
           <Stack spacing={3} component="form" onSubmit={onSubmit}>
             <Stack spacing={1}>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                Sign in
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Continue to Support Workspace
+                Giriş
               </Typography>
             </Stack>
 
             {error ? <Alert severity="error">{error}</Alert> : null}
 
             <TextField
-              label="Username"
+              label="Kullanıcı adı"
               type="text"
               value={username}
               onChange={(event) => onUsernameChange(event.target.value)}
@@ -45,7 +42,7 @@ export default function LoginView({ username, password, loading, error, onUserna
               autoComplete="username"
             />
             <TextField
-              label="Password"
+              label="Şifre"
               type="password"
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
@@ -55,7 +52,7 @@ export default function LoginView({ username, password, loading, error, onUserna
             />
 
             <Button type="submit" variant="contained" size="large" fullWidth disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "Giriş yapılıyor..." : "Giriş yap"}
             </Button>
           </Stack>
         </CardContent>

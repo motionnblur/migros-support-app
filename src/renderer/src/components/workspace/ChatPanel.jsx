@@ -189,7 +189,7 @@ export default function ChatPanel({
 
                 <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon/>}
                         onClick={onLogout}>
-                    Logout
+                    Çıkış yap
                 </Button>
             </Box>
 
@@ -263,7 +263,7 @@ export default function ChatPanel({
                     <TextField
                         fullWidth
                         size="small"
-                        placeholder={activeConversation.isBanned ? "User is banned" : "Write a reply to the customer..."}
+                        placeholder={activeConversation.isBanned ? "User is banned" : "Mesaj yazın..."}
                         multiline
                         maxRows={4}
                         value={draftMessage}
@@ -284,7 +284,7 @@ export default function ChatPanel({
                             endAdornment: (
                                 <InputAdornment position="end">
                                     <Typography variant="caption" sx={{color: "#64748b"}}>
-                                        Enter to send
+                                        Göndermek için Enter'a basın..
                                     </Typography>
                                 </InputAdornment>
                             )
