@@ -6,7 +6,6 @@ import {
     Button,
     Card,
     CardContent,
-    Chip,
     CircularProgress,
     Divider,
     IconButton,
@@ -18,17 +17,15 @@ import {
 } from "@mui/material";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import AttachFileRoundedIcon from "@mui/icons-material/AttachFileRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import SentimentSatisfiedAltRoundedIcon from "@mui/icons-material/SentimentSatisfiedAltRounded";
-import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
-import AssignmentReturnRoundedIcon from "@mui/icons-material/AssignmentReturnRounded";
-import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
 import DeleteSweepRoundedIcon from "@mui/icons-material/DeleteSweepRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import PriorityPill from "./PriorityPill";
 
 export default function ChatPanel({
@@ -39,6 +36,7 @@ export default function ChatPanel({
                                       onBack,
                                       onLogout,
                                       onSendMessage,
+                                      onEditMessage,
                                       onBanConversation,
                                       onUnbanConversation,
                                       onClearConversation,
@@ -46,6 +44,9 @@ export default function ChatPanel({
                                   }) {
     const [draftMessage, setDraftMessage] = React.useState("");
     const [sending, setSending] = React.useState(false);
+    const [editingMessageId, setEditingMessageId] = React.useState("");
+    const [editDraftMessage, setEditDraftMessage] = React.useState("");
+    const [savingEdit, setSavingEdit] = React.useState(false);
     const messagesContainerRef = React.useRef(null);
 
     React.useEffect(() => {
@@ -59,6 +60,12 @@ export default function ChatPanel({
         });
     }, [activeConversation?.id, activeMessages]);
 
+    React.useEffect(() => {
+        setEditingMessageId("");
+        setEditDraftMessage("");
+        setSavingEdit(false);
+    }, [activeConversation?.id]);
+
     const submitMessage = async () => {
         const text = draftMessage.trim();
         if (!text || sending || activeConversation?.isBanned) {
@@ -71,6 +78,41 @@ export default function ChatPanel({
 
         if (result?.ok) {
             setDraftMessage("");
+        }
+    };
+
+    const startEditMessage = (message) => {
+        const messageId = message?.messageId || String(message?.id || "");
+        if (!messageId || !onEditMessage) {
+            return;
+        }
+
+        setEditingMessageId(messageId);
+        setEditDraftMessage(message?.text || "");
+    };
+
+    const cancelEditMessage = () => {
+        if (savingEdit) {
+            return;
+        }
+
+        setEditingMessageId("");
+        setEditDraftMessage("");
+    };
+
+    const saveEditedMessage = async () => {
+        const text = editDraftMessage.trim();
+        if (!editingMessageId || !text || !onEditMessage || savingEdit) {
+            return;
+        }
+
+        setSavingEdit(true);
+        const result = await onEditMessage(editingMessageId, text);
+        setSavingEdit(false);
+
+        if (result?.ok) {
+            setEditingMessageId("");
+            setEditDraftMessage("");
         }
     };
 
@@ -189,7 +231,7 @@ export default function ChatPanel({
 
                 <Button size="small" variant="outlined" color="inherit" startIcon={<LogoutRoundedIcon/>}
                         onClick={onLogout}>
-                    Çıkış yap
+                    Cikis yap
                 </Button>
             </Box>
 
@@ -210,6 +252,10 @@ export default function ChatPanel({
                     <Stack spacing={1.2}>
                         {activeMessages.map((message) => {
                             const isAgent = message.type === "agent";
+                            const messageId = message.messageId || String(message.id || "");
+                            const isEditing = editingMessageId && editingMessageId === messageId;
+                            const canStartEdit = isAgent && message.canEdit && !savingEdit;
+
                             return (
                                 <Box
                                     key={message.id}
@@ -233,15 +279,64 @@ export default function ChatPanel({
                                         }}
                                     >
                                         <CardContent sx={{p: "10px 12px !important"}}>
-                                            <Typography
-                                                sx={{fontWeight: 700, fontSize: 12.5, color: "#1e3a8a", mb: 0.5}}>
-                                                {message.author}
-                                            </Typography>
-                                            <Typography
-                                                sx={{fontSize: 13.5, color: "#0f172a"}}>{message.text}</Typography>
-                                            <Typography
-                                                sx={{fontSize: 11, color: "#64748b", textAlign: "right", mt: 0.7}}>
-                                                {message.time}
+                                            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                                                <Typography sx={{fontWeight: 700, fontSize: 12.5, color: "#1e3a8a", mb: 0.5}}>
+                                                    {message.author}
+                                                </Typography>
+
+                                                {canStartEdit && !isEditing ? (
+                                                    <Tooltip title="Edit message">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => startEditMessage(message)}
+                                                            sx={{border: "1px solid #bfdbfe", width: 22, height: 22}}
+                                                        >
+                                                            <EditRoundedIcon sx={{fontSize: 14}}/>
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                ) : null}
+                                            </Stack>
+
+                                            {isEditing ? (
+                                                <Stack spacing={1}>
+                                                    <TextField
+                                                        multiline
+                                                        fullWidth
+                                                        minRows={2}
+                                                        maxRows={6}
+                                                        size="small"
+                                                        value={editDraftMessage}
+                                                        onChange={(event) => setEditDraftMessage(event.target.value)}
+                                                        disabled={savingEdit}
+                                                    />
+                                                    <Stack direction="row" spacing={0.8} justifyContent="flex-end">
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="inherit"
+                                                            startIcon={<CloseRoundedIcon/>}
+                                                            onClick={cancelEditMessage}
+                                                            disabled={savingEdit}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="contained"
+                                                            startIcon={<CheckRoundedIcon/>}
+                                                            onClick={saveEditedMessage}
+                                                            disabled={savingEdit || !editDraftMessage.trim()}
+                                                        >
+                                                            {savingEdit ? "Saving..." : "Save"}
+                                                        </Button>
+                                                    </Stack>
+                                                </Stack>
+                                            ) : (
+                                                <Typography sx={{fontSize: 13.5, color: "#0f172a"}}>{message.text}</Typography>
+                                            )}
+
+                                            <Typography sx={{fontSize: 11, color: "#64748b", textAlign: "right", mt: 0.7}}>
+                                                {message.time}{message.editedAt ? " - edited" : ""}
                                             </Typography>
                                         </CardContent>
                                     </Card>
@@ -263,7 +358,7 @@ export default function ChatPanel({
                     <TextField
                         fullWidth
                         size="small"
-                        placeholder={activeConversation.isBanned ? "User is banned" : "Mesaj yazın..."}
+                        placeholder={activeConversation.isBanned ? "User is banned" : "Mesaj yazin..."}
                         multiline
                         maxRows={4}
                         value={draftMessage}
@@ -284,7 +379,7 @@ export default function ChatPanel({
                             endAdornment: (
                                 <InputAdornment position="end">
                                     <Typography variant="caption" sx={{color: "#64748b"}}>
-                                        Göndermek için Enter'a basın..
+                                        Enter ile gonder
                                     </Typography>
                                 </InputAdornment>
                             )

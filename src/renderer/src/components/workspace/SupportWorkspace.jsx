@@ -41,10 +41,13 @@ function formatMessage(rawMessage) {
 
   return {
     id: rawMessage?.id || rawMessage?.messageId,
+    messageId: rawMessage?.messageId || String(rawMessage?.id || ""),
     type: isAgent ? "agent" : "customer",
     author: isAgent ? "Support Agent" : rawMessage?.customerId || "Customer",
     text: rawMessage?.text || "",
-    time
+    time,
+    canEdit: Boolean(rawMessage?.canEdit),
+    editedAt: rawMessage?.editedAt || null
   };
 }
 
@@ -87,7 +90,10 @@ function areMessagesEqual(left, right) {
       a.type !== b.type ||
       a.author !== b.author ||
       a.text !== b.text ||
-      a.time !== b.time
+      a.time !== b.time ||
+      a.messageId !== b.messageId ||
+      a.canEdit !== b.canEdit ||
+      a.editedAt !== b.editedAt
     ) {
       return false;
     }
@@ -258,6 +264,33 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       fetchMessages(selectedConversationId, { showLoader: false }),
       fetchConversations()
     ]);
+    return { ok: true };
+  };
+
+  const handleEditMessage = async (messageId, text) => {
+    if (!selectedConversationId) {
+      return { ok: false, error: "No conversation selected" };
+    }
+
+    if (!messageId) {
+      return { ok: false, error: "Message id is missing" };
+    }
+
+    const result = await window.electronAPI.editMessage(accessToken, selectedConversationId, messageId, text);
+    if (!result.ok) {
+      if (result.status === 401) {
+        logout("Session expired. Please sign in again.");
+      } else {
+        setError(result.error || "Failed to edit message");
+      }
+      return { ok: false, error: result.error || "Failed to edit message" };
+    }
+
+    await Promise.all([
+      fetchMessages(selectedConversationId, { showLoader: false }),
+      fetchConversations()
+    ]);
+
     return { ok: true };
   };
 
@@ -467,6 +500,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             onBack={() => setMobileView("list")}
             onLogout={() => logout()}
             onSendMessage={handleSendMessage}
+            onEditMessage={handleEditMessage}
             onBanConversation={handleBanConversation}
             onUnbanConversation={handleUnbanConversation}
             onClearConversation={handleClearConversation}

@@ -155,6 +155,27 @@ ipcMain.handle("support:send-message", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("support:edit-message", async (_event, payload) => {
+  const conversationId = payload?.conversationId;
+  const messageId = payload?.messageId;
+
+  if (!conversationId || !messageId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationId and messageId are required"
+    };
+  }
+
+  return requestSupportApi({
+    path: `/support/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+    method: "PATCH",
+    token: payload?.token,
+    body: {
+      text: payload?.text
+    }
+  });
+});
 ipcMain.handle("support:ban-conversation", async (_event, payload) => {
   const conversationId = payload?.conversationId;
   if (!conversationId) {
