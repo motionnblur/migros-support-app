@@ -41,7 +41,8 @@ export default function ChatPanel({
   onUnbanConversation,
   onClearConversation,
   actionBusy,
-  conversationActionsDisabled = false
+  conversationActionsDisabled = false,
+  activeConversationOnline
 }) {
   const [draftMessage, setDraftMessage] = React.useState("");
   const [sending, setSending] = React.useState(false);
@@ -169,6 +170,10 @@ export default function ChatPanel({
     await onClearConversation();
   };
 
+  const hasPresence = typeof activeConversationOnline === "boolean";
+  const presenceLabel = hasPresence ? (activeConversationOnline ? "Online" : "Offline") : "Checking...";
+  const presenceColor = hasPresence ? (activeConversationOnline ? "#16a34a" : "#64748b") : "#94a3b8";
+
   if (!activeConversation) {
     return (
       <Box sx={{ display: "grid", placeItems: "center", minHeight: 280, color: "#64748b" }}>
@@ -206,9 +211,17 @@ export default function ChatPanel({
           <Typography sx={{ fontWeight: 800 }} noWrap>
             {activeConversation.name}
           </Typography>
-          <Typography sx={{ color: "#64748b", fontSize: 12 }} noWrap>
-            {activeConversation.customer} | {activeConversation.channel}
-          </Typography>
+          <Stack direction="row" spacing={1.1} alignItems="center" sx={{ minWidth: 0 }}>
+            <Typography sx={{ color: "#64748b", fontSize: 12 }} noWrap>
+              {activeConversation.customer} | {activeConversation.channel}
+            </Typography>
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
+              <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: presenceColor }} />
+              <Typography sx={{ color: presenceColor, fontSize: 11.5, fontWeight: 700 }}>
+                {presenceLabel}
+              </Typography>
+            </Stack>
+          </Stack>
         </Box>
 
         <PriorityPill priority={activeConversation.priority} />

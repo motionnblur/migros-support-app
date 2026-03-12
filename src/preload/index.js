@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   ping: () => "pong",
   login: (credentials) => ipcRenderer.invoke("auth:login", credentials),
   getConversations: (token) => ipcRenderer.invoke("support:get-conversations", { token }),
+  getConversationStatuses: (token, conversationIds) =>
+    ipcRenderer.invoke("support:get-conversation-statuses", { token, conversationIds }),
   searchCustomers: (token, query, limit = 20) =>
     ipcRenderer.invoke("support:search-customers", { token, query, limit }),
   getMessages: (token, conversationId) =>

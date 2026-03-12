@@ -118,6 +118,31 @@ ipcMain.handle("support:get-conversations", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("support:get-conversation-statuses", async (_event, payload) => {
+  const conversationIds = Array.isArray(payload?.conversationIds)
+    ? payload.conversationIds
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+    : [];
+
+  if (!conversationIds.length) {
+    return {
+      ok: false,
+      status: 400,
+      error: "conversationIds is required"
+    };
+  }
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("conversationIds", conversationIds.join(","));
+
+  return requestSupportApi({
+    path: `/support/conversations/status?${searchParams.toString()}`,
+    method: "GET",
+    token: payload?.token
+  });
+});
+
 ipcMain.handle("support:search-customers", async (_event, payload) => {
   const query = typeof payload?.query === "string" ? payload.query.trim() : "";
   const limit = Math.min(Math.max(Number(payload?.limit) || 20, 1), 100);

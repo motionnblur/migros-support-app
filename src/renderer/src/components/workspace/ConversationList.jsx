@@ -37,7 +37,8 @@ export default function ConversationList({
   onCustomerSearchQueryChange,
   customerSearchResults,
   customerSearchLoading,
-  onSelectCustomer
+  onSelectCustomer,
+  conversationPresence = {}
 }) {
   const hasConversations = conversations.length > 0;
   const hasSearchQuery = Boolean(customerSearchQuery.trim());
@@ -153,6 +154,8 @@ export default function ConversationList({
       <Stack spacing={0} sx={{ overflowY: "auto", p: 1, minHeight: 0 }}>
         {conversations.map((conversation) => {
           const active = conversation.id === activeConversationId;
+          const hasPresence = typeof conversationPresence?.[conversation.id] === "boolean";
+          const isOnline = hasPresence && conversationPresence[conversation.id] === true;
 
           return (
             <Box
@@ -216,6 +219,17 @@ export default function ConversationList({
                   <Typography sx={{ fontSize: 12, color: "#334155" }} noWrap>
                     {conversation.customer}
                   </Typography>
+                  <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 0.2 }}>
+                    <FiberManualRecordRoundedIcon
+                      sx={{
+                        fontSize: 8,
+                        color: hasPresence ? (isOnline ? "#16a34a" : "#94a3b8") : "#cbd5e1"
+                      }}
+                    />
+                    <Typography sx={{ fontSize: 11, color: hasPresence ? (isOnline ? "#166534" : "#475569") : "#64748b" }}>
+                      {hasPresence ? (isOnline ? "Online" : "Offline") : "Checking..."}
+                    </Typography>
+                  </Stack>
                   <Stack direction="row" spacing={0.6} alignItems="center" sx={{ color: "#64748b" }}>
                     <ChannelIcon channel={conversation.channel} />
                     <Typography sx={{ fontSize: 12 }} noWrap>

@@ -122,6 +122,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const [selectedConversationId, setSelectedConversationId] = React.useState("");
   const [selectedCustomer, setSelectedCustomer] = React.useState(null);
   const [messagesByConversation, setMessagesByConversation] = React.useState({});
+  const [presenceByConversationId, setPresenceByConversationId] = React.useState({});
   const [mobileView, setMobileView] = React.useState("list");
   const [activeNav, setActiveNav] = React.useState("inbox");
   const [loadingConversations, setLoadingConversations] = React.useState(true);
@@ -237,6 +238,77 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     },
     [accessToken, conversations, logout]
   );
+
+  const fetchConversationStatuses = React.useCallback(
+    async (conversationIds) => {
+      const normalizedConversationIds = Array.from(
+        new Set(
+          (Array.isArray(conversationIds) ? conversationIds : [])
+            .map((value) => String(value || "").trim())
+            .filter(Boolean)
+        )
+      );
+
+      if (!normalizedConversationIds.length) {
+        return;
+      }
+
+      const result = await window.electronAPI.getConversationStatuses(accessToken, normalizedConversationIds);
+
+      if (!result.ok) {
+        if (result.status === 401) {
+          logout("Session expired. Please sign in again.");
+        }
+        return;
+      }
+
+      const statuses = Array.isArray(result.data?.statuses) ? result.data.statuses : [];
+
+      setPresenceByConversationId((previous) => {
+        let changed = false;
+        const next = { ...previous };
+
+        statuses.forEach((status) => {
+          const conversationId = String(status?.conversationId || "").trim();
+          if (!conversationId || typeof status?.isOnline !== "boolean") {
+            return;
+          }
+
+          if (next[conversationId] !== status.isOnline) {
+            next[conversationId] = status.isOnline;
+            changed = true;
+          }
+        });
+
+        return changed ? next : previous;
+      });
+    },
+    [accessToken, logout]
+  );
+
+  const presenceTargetConversationIds = React.useMemo(() => {
+    const ids = conversations.map((conversation) => conversation.id).filter(Boolean);
+
+    if (selectedCustomer?.userMail && !ids.includes(selectedCustomer.userMail)) {
+      ids.push(selectedCustomer.userMail);
+    }
+
+    return ids;
+  }, [conversations, selectedCustomer]);
+
+  React.useEffect(() => {
+    if (!presenceTargetConversationIds.length) {
+      return undefined;
+    }
+
+    fetchConversationStatuses(presenceTargetConversationIds);
+
+    const interval = setInterval(() => {
+      fetchConversationStatuses(presenceTargetConversationIds);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchConversationStatuses, presenceTargetConversationIds]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -697,6 +769,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             customerSearchResults={customerSearchResults}
             customerSearchLoading={customerSearchLoading}
             onSelectCustomer={handleSelectCustomer}
+            conversationPresence={presenceByConversationId}
           />
         ) : null}
 
@@ -715,6 +788,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
             onClearConversation={handleClearConversation}
             actionBusy={actionBusy}
             conversationActionsDisabled={!isSelectedConversationReal}
+            activeConversationOnline={activeConversation ? presenceByConversationId[activeConversation.id] : undefined}
           />
         ) : null}
       </Box>
