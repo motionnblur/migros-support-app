@@ -189,5 +189,11 @@ Build output is generated under `out/`.
 3. Message send creates/syncs correctly.
 4. Edit/delete works and reflects on both sides.
 5. Ban/unban/clear chat works and UI state updates.
-6. New customer search + first-message conversation creation works.
-7. No `401/502` from internal key mismatch.
+
+## Images
+
+<img width="1086" height="713" alt="Screenshot 2026-03-13 162655" src="https://github.com/user-attachments/assets/efee13b2-6752-4616-a7a2-3b1602950a07" />
+
+<img width="1086" height="713" alt="Screenshot 2026-03-13 162751" src="https://github.com/user-attachments/assets/7e68f7ba-b625-4779-b7fb-16fb6e99107e" />
+
+<img width="1086" height="713" alt="Screenshot 2026-03-13 162936" src="https://github.com/user-attachments/assets/4242b124-b7b5-4a53-a6f1-19fb171bce61" />
