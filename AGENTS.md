@@ -1,10 +1,10 @@
 # AGENTS.md - migros-support system guide
 
 ## 1) What this project is
-`D:\Projects\migros-support` is an Electron + React desktop app for support operators.
+`migros-support` is an Electron + React desktop app for support operators.
 It is tightly coupled with:
-- `D:\Projects\migros-support-backend` (Node.js/Express + PostgreSQL projection + bridge service)
-- `D:\Projects\migros-app` (Spring Boot core backend where real support/domain state lives)
+- `migros-support-backend` (Node.js/Express + PostgreSQL projection + bridge service)
+- `migros-app` (Spring Boot core backend where real support/domain state lives)
 
 If you change support features, assume all 3 repos may need updates.
 
@@ -109,14 +109,14 @@ If these keys do not match, sync and internal actions fail with 401/502.
 
 ## 7) Local run order (recommended)
 
-1. Start Spring ecosystem (`D:\Projects\migros-app`):
+1. Start Spring ecosystem (`migros-app\`):
 - `docker compose --env-file configs/postgres.env --env-file configs/spring.env up`
 - API is exposed via nginx at `http://localhost:8080`
 
-2. Start Node support backend (`D:\Projects\migros-support-backend`):
+2. Start Node support backend (`migros-support-backend\`):
 - `npm run dev`
 
-3. Start Electron app (`D:\Projects\migros-support`):
+3. Start Electron app (`migros-support\`):
 - `npm run dev`
 
 ## 8) Change rules for future agents
