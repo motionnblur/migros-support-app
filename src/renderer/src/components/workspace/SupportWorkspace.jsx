@@ -7,7 +7,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import ConversationList from "./ConversationList";
 import ChatPanel from "./ChatPanel";
 
-const navActions = [{ id: "settings", icon: SettingsRoundedIcon, label: "Settings" }];
+const navActions = [{ id: "settings", icon: SettingsRoundedIcon, label: "Ayarlar" }];
 
 function formatConversation(rawConversation) {
   const date = rawConversation?.lastMessageAt ? new Date(rawConversation.lastMessageAt) : null;
@@ -18,18 +18,18 @@ function formatConversation(rawConversation) {
 
   return {
     id: rawConversation?.conversationId,
-    name: rawConversation?.customerId || "Customer",
-    customer: rawConversation?.customerId || "Unknown",
-    preview: rawConversation?.lastMessagePreview || "No messages yet",
+    name: rawConversation?.customerId || "Müşteri",
+    customer: rawConversation?.customerId || "Bilinmiyor",
+    preview: rawConversation?.lastMessagePreview || "Henüz mesaj yok",
     time,
     unread: Number(rawConversation?.unreadCount || 0),
     priority:
       Number(rawConversation?.unreadCount || 0) > 5
-        ? "Urgent"
+        ? "Acil"
         : Number(rawConversation?.unreadCount || 0) > 0
-          ? "High"
+          ? "Yüksek"
           : "Normal",
-    channel: "Website",
+    channel: "Web Sitesi",
     isBanned: Boolean(rawConversation?.isBanned)
   };
 }
@@ -47,7 +47,7 @@ function formatMessage(rawMessage) {
     id: rawMessage?.id || rawMessage?.messageId,
     messageId: rawMessage?.messageId || String(rawMessage?.id || ""),
     type: isAgent ? "agent" : "customer",
-    author: isAgent ? "Siz" : rawMessage?.customerId || "Customer",
+    author: isAgent ? "Siz" : rawMessage?.customerId || "Müşteri",
     text: rawMessage?.text || "",
     time,
     canEdit: Boolean(rawMessage?.canEdit),
@@ -59,7 +59,7 @@ function formatCustomerSearchResult(rawCustomer) {
   const fullName = [rawCustomer?.userName, rawCustomer?.userLastName].filter(Boolean).join(" ").trim();
   return {
     userMail: rawCustomer?.userMail || "",
-    displayName: fullName || rawCustomer?.userMail || "Customer",
+    displayName: fullName || rawCustomer?.userMail || "Müşteri",
     isBanned: Boolean(rawCustomer?.isBanned),
     hasConversation: Boolean(rawCustomer?.hasConversation)
   };
@@ -139,11 +139,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
         return;
       }
 
-      setError(result.error || "Failed to load conversations");
+      setError(result.error || "Konuşmalar yüklenemedi");
       return;
     }
 
@@ -213,11 +213,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
       if (!result.ok) {
         if (result.status === 401) {
-          logout("Session expired. Please sign in again.");
+          logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
           return;
         }
 
-        setError(result.error || "Failed to load messages");
+        setError(result.error || "Mesajlar yüklenemedi");
         return;
       }
 
@@ -257,7 +257,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
       if (!result.ok) {
         if (result.status === 401) {
-          logout("Session expired. Please sign in again.");
+          logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
         }
         return;
       }
@@ -372,11 +372,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
       if (!result.ok) {
         if (result.status === 401) {
-          logout("Session expired. Please sign in again.");
+          logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
           return;
         }
 
-        setError(result.error || "Failed to search customers");
+        setError(result.error || "Müşteri araması başarısız");
         return;
       }
 
@@ -435,7 +435,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
   const handleSendMessage = async (text) => {
     if (!selectedConversationId) {
-      return { ok: false, error: "No conversation selected" };
+      return { ok: false, error: "Konuşma seçilmedi" };
     }
 
     const activeConversationFromList = conversations.find((conversation) => conversation.id === selectedConversationId);
@@ -449,7 +449,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
         : null);
 
     if (selectedConversation?.isBanned) {
-      const banError = "This user is banned. You cannot send new messages.";
+      const banError = "Bu kullanıcı yasaklı. Yeni mesaj gönderemezsiniz.";
       setError(banError);
       return { ok: false, error: banError };
     }
@@ -457,11 +457,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     const result = await window.electronAPI.sendMessage(accessToken, selectedConversationId, text);
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       } else {
-        setError(result.error || "Failed to send message");
+        setError(result.error || "Mesaj gönderilemedi");
       }
-      return { ok: false, error: result.error || "Failed to send message" };
+      return { ok: false, error: result.error || "Mesaj gönderilemedi" };
     }
 
     await fetchConversations();
@@ -472,21 +472,21 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
   const handleEditMessage = async (messageId, text) => {
     if (!selectedConversationId) {
-      return { ok: false, error: "No conversation selected" };
+      return { ok: false, error: "Konuşma seçilmedi" };
     }
 
     if (!messageId) {
-      return { ok: false, error: "Message id is missing" };
+      return { ok: false, error: "Mesaj kimliği eksik" };
     }
 
     const result = await window.electronAPI.editMessage(accessToken, selectedConversationId, messageId, text);
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       } else {
-        setError(result.error || "Failed to edit message");
+        setError(result.error || "Mesaj düzenlenemedi");
       }
-      return { ok: false, error: result.error || "Failed to edit message" };
+      return { ok: false, error: result.error || "Mesaj düzenlenemedi" };
     }
 
     await Promise.all([fetchMessages(selectedConversationId, { showLoader: false }), fetchConversations()]);
@@ -496,21 +496,21 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
   const handleDeleteMessage = async (messageId) => {
     if (!selectedConversationId) {
-      return { ok: false, error: "No conversation selected" };
+      return { ok: false, error: "Konuşma seçilmedi" };
     }
 
     if (!messageId) {
-      return { ok: false, error: "Message id is missing" };
+      return { ok: false, error: "Mesaj kimliği eksik" };
     }
 
     const result = await window.electronAPI.deleteMessage(accessToken, selectedConversationId, messageId);
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       } else {
-        setError(result.error || "Failed to delete message");
+        setError(result.error || "Mesaj silinemedi");
       }
-      return { ok: false, error: result.error || "Failed to delete message" };
+      return { ok: false, error: result.error || "Mesaj silinemedi" };
     }
 
     if (result.data?.conversationRemoved) {
@@ -535,7 +535,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
   const handleBanConversation = async () => {
     if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
-      return { ok: false, error: "Conversation action unavailable" };
+      return { ok: false, error: "Konuşma işlemi kullanılamıyor" };
     }
 
     setActionBusy(true);
@@ -544,12 +544,12 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       } else {
-        setError(result.error || "Failed to ban user");
+        setError(result.error || "Kullanıcı yasaklanamadı");
       }
 
-      return { ok: false, error: result.error || "Failed to ban user" };
+      return { ok: false, error: result.error || "Kullanıcı yasaklanamadı" };
     }
 
     await fetchConversations();
@@ -559,7 +559,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
   const handleUnbanConversation = async () => {
     if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
-      return { ok: false, error: "Conversation action unavailable" };
+      return { ok: false, error: "Konuşma işlemi kullanılamıyor" };
     }
 
     setActionBusy(true);
@@ -568,12 +568,12 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       } else {
-        setError(result.error || "Failed to unban user");
+        setError(result.error || "Kullanıcının yasağı kaldırılamadı");
       }
 
-      return { ok: false, error: result.error || "Failed to unban user" };
+      return { ok: false, error: result.error || "Kullanıcının yasağı kaldırılamadı" };
     }
 
     await fetchConversations();
@@ -583,7 +583,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
   const handleClearConversation = async () => {
     if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
-      return { ok: false, error: "Conversation action unavailable" };
+      return { ok: false, error: "Konuşma işlemi kullanılamıyor" };
     }
 
     setActionBusy(true);
@@ -592,12 +592,12 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     if (!result.ok) {
       if (result.status === 401) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       } else {
-        setError(result.error || "Failed to clear chat");
+        setError(result.error || "Sohbet temizlenemedi");
       }
 
-      return { ok: false, error: result.error || "Failed to clear chat" };
+      return { ok: false, error: result.error || "Sohbet temizlenemedi" };
     }
 
     setMessagesByConversation((previous) => {
@@ -619,11 +619,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
           id: selectedCustomer.userMail,
           name: selectedCustomer.displayName,
           customer: selectedCustomer.userMail,
-          preview: "No messages yet",
+          preview: "Henüz mesaj yok",
           time: "--:--",
           unread: 0,
           priority: "Normal",
-          channel: "Website",
+          channel: "Web Sitesi",
           isBanned: selectedCustomer.isBanned
         }
       : null);
@@ -723,7 +723,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
           })}
 
           <Box sx={{ mt: "auto", mb: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.2 }}>
-            <Tooltip title="Logout" placement="right" arrow>
+            <Tooltip title="Çıkış yap" placement="right" arrow>
               <IconButton
                 size="small"
                 onClick={() => logout()}
@@ -802,7 +802,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       {loadingConversations && conversations.length === 0 ? (
         <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
           <CircularProgress size={16} />
-          Loading conversations...
+          Konuşmalar yükleniyor...
         </Box>
       ) : null}
     </Box>

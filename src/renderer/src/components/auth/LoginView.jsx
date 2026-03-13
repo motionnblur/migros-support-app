@@ -26,14 +26,14 @@ export default function LoginView({ username, password, loading, error, onUserna
           <Stack spacing={3} component="form" onSubmit={onSubmit}>
             <Stack spacing={1}>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                Giriş
+                Giris
               </Typography>
             </Stack>
 
             {error ? <Alert severity="error">{error}</Alert> : null}
 
             <TextField
-              label="Kullanıcı adı"
+              label="Kullanici adi"
               type="text"
               value={username}
               onChange={(event) => onUsernameChange(event.target.value)}
@@ -42,7 +42,7 @@ export default function LoginView({ username, password, loading, error, onUserna
               autoComplete="username"
             />
             <TextField
-              label="Şifre"
+              label="Sifre"
               type="password"
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
@@ -52,7 +52,7 @@ export default function LoginView({ username, password, loading, error, onUserna
             />
 
             <Button type="submit" variant="contained" size="large" fullWidth disabled={loading}>
-              {loading ? "Giriş yapılıyor..." : "Giriş yap"}
+              {loading ? "Giris yapiliyor..." : "Giris yap"}
             </Button>
           </Stack>
         </CardContent>

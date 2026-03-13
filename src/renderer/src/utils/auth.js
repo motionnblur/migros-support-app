@@ -1,9 +1,9 @@
 export function buildErrorText(result) {
   if (!result) {
-    return "Login failed";
+    return "Giriş başarısız";
   }
 
-  const base = result.error || "Login failed";
+  const base = result.error || "Giriş başarısız";
   const code = result?.detail?.code || result?.detail?.cause?.code;
   const causeMessage = result?.detail?.cause?.message;
 

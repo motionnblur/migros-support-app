@@ -52,7 +52,7 @@ export default function App() {
     const interval = setInterval(() => {
       const token = localStorage.getItem("accessToken");
       if (!isTokenValid(token)) {
-        logout("Session expired. Please sign in again.");
+        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
       }
     }, 30000);
 
@@ -81,7 +81,7 @@ export default function App() {
       setCurrentUser(user);
       setPassword("");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Login failed");
+      setError(submitError instanceof Error ? submitError.message : "Giriş başarısız");
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ export default function App() {
           background: "radial-gradient(1200px circle at 10% 10%, #dbe7ff 0%, #f6f8ff 35%, #fefefe 70%)"
         }}
       >
-        <Typography>Checking session...</Typography>
+        <Typography>Oturum kontrol ediliyor...</Typography>
       </Box>
     );
   }

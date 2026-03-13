@@ -61,11 +61,11 @@ export default function ConversationList({
       <Box sx={{ px: 2, py: 2, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.2 }}>
-            Message Inbox
+            Mesaj Kutusu
           </Typography>
           <Chip
             icon={<LanguageRoundedIcon sx={{ fontSize: "16px !important" }} />}
-            label="Live"
+            label="Canli"
             size="small"
             sx={{ bgcolor: "#dcfce7", color: "#166534", fontWeight: 700 }}
           />
@@ -76,7 +76,7 @@ export default function ConversationList({
           fullWidth
           value={customerSearchQuery}
           onChange={(event) => onCustomerSearchQueryChange(event.target.value)}
-          placeholder="Search customer by email or name"
+          placeholder="Musteriyi e-posta veya isimle ara"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -100,7 +100,7 @@ export default function ConversationList({
           >
             {customerSearchLoading ? (
               <Typography sx={{ fontSize: 12.5, color: "#64748b", p: 0.5 }}>
-                Searching customers...
+                Musteriler araniyor...
               </Typography>
             ) : customerSearchResults.length ? (
               customerSearchResults.map((customer) => (
@@ -129,12 +129,12 @@ export default function ConversationList({
                     </Box>
                     <Stack alignItems="flex-end" spacing={0.3}>
                       {customer.hasConversation ? (
-                        <Chip size="small" label="In inbox" sx={{ height: 18, fontSize: 10 }} />
+                        <Chip size="small" label="Gelen kutusunda" sx={{ height: 18, fontSize: 10 }} />
                       ) : null}
                       {customer.isBanned ? (
                         <Chip
                           size="small"
-                          label="Banned"
+                          label="Yasakli"
                           sx={{ height: 18, fontSize: 10, bgcolor: "#fee2e2", color: "#991b1b" }}
                         />
                       ) : null}
@@ -144,7 +144,7 @@ export default function ConversationList({
               ))
             ) : (
               <Typography sx={{ fontSize: 12.5, color: "#64748b", p: 0.5 }}>
-                No customers found.
+                Musteri bulunamadi.
               </Typography>
             )}
           </Box>
@@ -227,7 +227,7 @@ export default function ConversationList({
                       }}
                     />
                     <Typography sx={{ fontSize: 11, color: hasPresence ? (isOnline ? "#166534" : "#475569") : "#64748b" }}>
-                      {hasPresence ? (isOnline ? "Online" : "Offline") : "Checking..."}
+                      {hasPresence ? (isOnline ? "Cevrimici" : "Cevrimdisi") : "Kontrol ediliyor..."}
                     </Typography>
                   </Stack>
                   <Stack direction="row" spacing={0.6} alignItems="center" sx={{ color: "#64748b" }}>
@@ -265,7 +265,7 @@ export default function ConversationList({
 
         {!loading && !hasConversations ? (
           <Box sx={{ p: 2, color: "#64748b", textAlign: "center", fontSize: 14 }}>
-            No customer conversations yet.
+            Henuz musteri konusmasi yok.
           </Box>
         ) : null}
       </Stack>

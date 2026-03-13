@@ -126,7 +126,7 @@ export default function ChatPanel({
       return;
     }
 
-    const shouldDelete = window.confirm("Are you sure you want to delete this message?");
+    const shouldDelete = window.confirm("Bu mesaji silmek istediginize emin misiniz?");
     if (!shouldDelete) {
       return;
     }
@@ -171,13 +171,13 @@ export default function ChatPanel({
   };
 
   const hasPresence = typeof activeConversationOnline === "boolean";
-  const presenceLabel = hasPresence ? (activeConversationOnline ? "Online" : "Offline") : "Checking...";
+  const presenceLabel = hasPresence ? (activeConversationOnline ? "Cevrimici" : "Cevrimdisi") : "Kontrol ediliyor...";
   const presenceColor = hasPresence ? (activeConversationOnline ? "#16a34a" : "#64748b") : "#94a3b8";
 
   if (!activeConversation) {
     return (
       <Box sx={{ display: "grid", placeItems: "center", minHeight: 280, color: "#64748b" }}>
-        Select a conversation to start supporting customers.
+        Musterilere destek vermek icin bir konusma secin.
       </Box>
     );
   }
@@ -226,13 +226,13 @@ export default function ChatPanel({
 
         <PriorityPill priority={activeConversation.priority} />
 
-        <Tooltip title="Search in chat">
+        <Tooltip title="Sohbette ara">
           <IconButton size="small" sx={{ border: "1px solid #e2e8f0" }}>
             <SearchRoundedIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title={activeConversation.isBanned ? "Unban user" : "Ban user"}>
+        <Tooltip title={activeConversation.isBanned ? "Kullanicinin yasagini kaldir" : "Kullaniciyi yasakla"}>
           <span>
             <IconButton
               size="small"
@@ -253,7 +253,7 @@ export default function ChatPanel({
           </span>
         </Tooltip>
 
-        <Tooltip title="Clear chat history">
+        <Tooltip title="Sohbet gecmisini temizle">
           <span>
             <IconButton
               size="small"
@@ -269,13 +269,13 @@ export default function ChatPanel({
 
       {conversationActionsDisabled ? (
         <Alert severity="info" sx={{ m: 1.5, mb: 0, border: "1px solid #bfdbfe" }}>
-          This customer has no existing conversation yet. Send the first message to start it.
+          Bu musterinin henuz bir konusmasi yok. Baslatmak icin ilk mesaji gonderin.
         </Alert>
       ) : null}
 
       {activeConversation.isBanned ? (
         <Alert severity="warning" sx={{ m: 1.5, mb: 0, border: "1px solid #fca5a5" }}>
-          This user is banned. New outgoing messages are disabled.
+          Bu kullanici yasakli. Yeni giden mesajlar devre disi.
         </Alert>
       ) : null}
 
@@ -283,7 +283,7 @@ export default function ChatPanel({
         {loadingMessages ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#64748b" }}>
             <CircularProgress size={16} />
-            Loading messages...
+            Mesajlar yukleniyor...
           </Box>
         ) : (
           <Stack spacing={1.2}>
@@ -326,7 +326,7 @@ export default function ChatPanel({
                         {!isEditing && (canStartEdit || canStartDelete || isDeleting) ? (
                           <Stack direction="row" spacing={0.7} alignItems="center">
                             {canStartEdit ? (
-                              <Tooltip title="Edit message">
+                              <Tooltip title="Mesaji duzenle">
                                 <IconButton
                                   size="small"
                                   onClick={() => startEditMessage(message)}
@@ -340,7 +340,7 @@ export default function ChatPanel({
                             {isDeleting ? (
                               <CircularProgress size={14} />
                             ) : canStartDelete ? (
-                              <Tooltip title="Delete message">
+                              <Tooltip title="Mesaji sil">
                                 <IconButton
                                   size="small"
                                   onClick={() => startDeleteMessage(message)}
@@ -375,7 +375,7 @@ export default function ChatPanel({
                               onClick={cancelEditMessage}
                               disabled={savingEdit || Boolean(deletingMessageId)}
                             >
-                              Cancel
+                              Iptal
                             </Button>
                             <Button
                               size="small"
@@ -384,7 +384,7 @@ export default function ChatPanel({
                               onClick={saveEditedMessage}
                               disabled={savingEdit || Boolean(deletingMessageId) || !editDraftMessage.trim()}
                             >
-                              {savingEdit ? "Saving..." : "Save"}
+                              {savingEdit ? "Kaydediliyor..." : "Kaydet"}
                             </Button>
                           </Stack>
                         </Stack>
@@ -394,7 +394,7 @@ export default function ChatPanel({
 
                       <Typography sx={{ fontSize: 11, color: "#64748b", textAlign: "right", mt: 0.7 }}>
                         {message.time}
-                        {message.editedAt ? " - edited" : ""}
+                        {message.editedAt ? " - duzenlendi" : ""}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -403,7 +403,7 @@ export default function ChatPanel({
             })}
 
             {!activeMessages.length ? (
-              <Box sx={{ color: "#64748b", fontSize: 14 }}>No messages yet.</Box>
+              <Box sx={{ color: "#64748b", fontSize: 14 }}>Henuz mesaj yok.</Box>
             ) : null}
           </Stack>
         )}
@@ -415,7 +415,7 @@ export default function ChatPanel({
           <TextField
             fullWidth
             size="small"
-            placeholder={activeConversation.isBanned ? "User is banned" : "Type your message..."}
+            placeholder={activeConversation.isBanned ? "Kullanici yasakli" : "Mesajinizi yazin..."}
             multiline
             maxRows={4}
             value={draftMessage}
@@ -436,7 +436,7 @@ export default function ChatPanel({
               endAdornment: (
                 <InputAdornment position="end">
                   <Typography variant="caption" sx={{ color: "#64748b" }}>
-                    Press Enter to send
+                    Gondermek icin Enter
                   </Typography>
                 </InputAdornment>
               )
@@ -455,7 +455,7 @@ export default function ChatPanel({
               }
             }}
           >
-            {sending ? "Sending..." : "Send"}
+            {sending ? "Gonderiliyor..." : "Gonder"}
           </Button>
         </Stack>
       </Box>
