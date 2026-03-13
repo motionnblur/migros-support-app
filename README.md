@@ -10,7 +10,7 @@ Desktop support client for operators to manage customer conversations (inbox + l
 
 This project is the operator UI layer of a 2-repo support system:
 
-- `Implement later`: Node.js/Express bridge + projection tables
+- [migros-app-bridge](https://github.com/motionnblur/migros-app-bridge): Node.js/Express bridge + projection tables
 - [migros-app](https://github.com/motionnblur/migros-app): Spring Boot backend (source of truth)
 
 The desktop app authenticates support users, lists conversations, reads/writes messages, and performs moderation actions (ban/unban/clear chat).
