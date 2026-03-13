@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import LoginView from "./components/auth/LoginView";
+import AccessDeniedView from "./components/auth/AccessDeniedView";
 import SupportWorkspace from "./components/workspace/SupportWorkspace";
 import { buildErrorText, clearStoredAuth, getStoredUser, isTokenValid } from "./utils/auth";
 
@@ -12,6 +13,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [accessToken, setAccessToken] = React.useState("");
+  const [accessDeniedMessage, setAccessDeniedMessage] = React.useState("");
   const [error, setError] = React.useState("");
 
   const logout = React.useCallback((message = "") => {
@@ -19,10 +21,19 @@ export default function App() {
     setIsAuthenticated(false);
     setCurrentUser(null);
     setAccessToken("");
+    setAccessDeniedMessage("");
     setPassword("");
     if (message) {
       setError(message);
+      return;
     }
+
+    setError("");
+  }, []);
+
+  const handleAccessDenied = React.useCallback((message = "") => {
+    setAccessDeniedMessage(message || "Bu islem icin gerekli destek yetkiniz bulunmuyor.");
+    setError("");
   }, []);
 
   React.useEffect(() => {
@@ -33,12 +44,14 @@ export default function App() {
       setIsAuthenticated(true);
       setCurrentUser(user);
       setAccessToken(token || "");
+      setAccessDeniedMessage("");
       setError("");
     } else {
       clearStoredAuth();
       setIsAuthenticated(false);
       setCurrentUser(null);
       setAccessToken("");
+      setAccessDeniedMessage("");
     }
 
     setSessionLoading(false);
@@ -52,7 +65,7 @@ export default function App() {
     const interval = setInterval(() => {
       const token = localStorage.getItem("accessToken");
       if (!isTokenValid(token)) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+        logout("Oturum suresi doldu. Lutfen tekrar giris yapin.");
       }
     }, 30000);
 
@@ -62,6 +75,7 @@ export default function App() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setAccessDeniedMessage("");
 
     setLoading(true);
     try {
@@ -79,13 +93,23 @@ export default function App() {
       setAccessToken(token);
       setIsAuthenticated(true);
       setCurrentUser(user);
+      setAccessDeniedMessage("");
       setPassword("");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Giriş başarısız");
+      setError(submitError instanceof Error ? submitError.message : "Giris basarisiz");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleRetryAccess = React.useCallback(() => {
+    if (!isTokenValid(accessToken)) {
+      logout("Oturum suresi doldu. Lutfen tekrar giris yapin.");
+      return;
+    }
+
+    setAccessDeniedMessage("");
+  }, [accessToken, logout]);
 
   if (sessionLoading) {
     return (
@@ -103,8 +127,26 @@ export default function App() {
     );
   }
 
+  if (isAuthenticated && accessDeniedMessage) {
+    return (
+      <AccessDeniedView
+        user={currentUser}
+        message={accessDeniedMessage}
+        onRetry={handleRetryAccess}
+        onLogout={() => logout()}
+      />
+    );
+  }
+
   if (isAuthenticated) {
-    return <SupportWorkspace currentUser={currentUser} logout={logout} accessToken={accessToken} />;
+    return (
+      <SupportWorkspace
+        currentUser={currentUser}
+        logout={logout}
+        accessToken={accessToken}
+        onAccessDenied={handleAccessDenied}
+      />
+    );
   }
 
   return (
@@ -119,3 +161,4 @@ export default function App() {
     />
   );
 }
+

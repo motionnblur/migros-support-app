@@ -116,7 +116,7 @@ function areMessagesEqual(left, right) {
   return true;
 }
 
-export default function SupportWorkspace({ currentUser, logout, accessToken }) {
+export default function SupportWorkspace({ currentUser, logout, accessToken, onAccessDenied }) {
   const isMobile = useMediaQuery("(max-width:900px)");
   const [conversations, setConversations] = React.useState([]);
   const [selectedConversationId, setSelectedConversationId] = React.useState("");
@@ -133,13 +133,41 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   const [customerSearchResults, setCustomerSearchResults] = React.useState([]);
   const [customerSearchLoading, setCustomerSearchLoading] = React.useState(false);
   const customerSearchDebounceRef = React.useRef(null);
+  const accessBlockedRef = React.useRef(false);
+
+  const handleAuthFailure = React.useCallback(
+    (result) => {
+      if (!result) {
+        return false;
+      }
+
+      if (result.status === 401) {
+        logout("Oturum suresi doldu. Lutfen tekrar giris yapin.");
+        return true;
+      }
+
+      if (result.status === 403) {
+        if (!accessBlockedRef.current) {
+          accessBlockedRef.current = true;
+          onAccessDenied?.(result.error || "Destek paneli icin erisim yetkiniz bulunmuyor.");
+        }
+        return true;
+      }
+
+      return false;
+    },
+    [logout, onAccessDenied]
+  );
 
   const fetchConversations = React.useCallback(async () => {
+    if (accessBlockedRef.current) {
+      return;
+    }
+
     const result = await window.electronAPI.getConversations(accessToken);
 
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+      if (handleAuthFailure(result)) {
         return;
       }
 
@@ -178,10 +206,14 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     });
 
     setError("");
-  }, [accessToken, logout, selectedCustomer]);
+  }, [accessToken, handleAuthFailure, selectedCustomer]);
 
   const fetchMessages = React.useCallback(
     async (conversationId, options = {}) => {
+      if (accessBlockedRef.current) {
+        return;
+      }
+
       if (!conversationId) {
         return;
       }
@@ -212,8 +244,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       }
 
       if (!result.ok) {
-        if (result.status === 401) {
-          logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+        if (handleAuthFailure(result)) {
           return;
         }
 
@@ -236,11 +267,15 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
       setError("");
     },
-    [accessToken, conversations, logout]
+    [accessToken, conversations, handleAuthFailure]
   );
 
   const fetchConversationStatuses = React.useCallback(
     async (conversationIds) => {
+      if (accessBlockedRef.current) {
+        return;
+      }
+
       const normalizedConversationIds = Array.from(
         new Set(
           (Array.isArray(conversationIds) ? conversationIds : [])
@@ -256,8 +291,8 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       const result = await window.electronAPI.getConversationStatuses(accessToken, normalizedConversationIds);
 
       if (!result.ok) {
-        if (result.status === 401) {
-          logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+        if (handleAuthFailure(result)) {
+          return;
         }
         return;
       }
@@ -283,7 +318,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
         return changed ? next : previous;
       });
     },
-    [accessToken, logout]
+    [accessToken, handleAuthFailure]
   );
 
   const presenceTargetConversationIds = React.useMemo(() => {
@@ -297,6 +332,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   }, [conversations, selectedCustomer]);
 
   React.useEffect(() => {
+    if (accessBlockedRef.current) {
+      return undefined;
+    }
+
     if (!presenceTargetConversationIds.length) {
       return undefined;
     }
@@ -304,6 +343,9 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     fetchConversationStatuses(presenceTargetConversationIds);
 
     const interval = setInterval(() => {
+      if (accessBlockedRef.current) {
+        return;
+      }
       fetchConversationStatuses(presenceTargetConversationIds);
     }, 10000);
 
@@ -314,6 +356,9 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     let cancelled = false;
 
     const load = async () => {
+      if (accessBlockedRef.current) {
+        return;
+      }
       setLoadingConversations(true);
       await fetchConversations();
       if (!cancelled) {
@@ -323,14 +368,23 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     load();
 
-    const interval = setInterval(fetchConversations, 5000);
+    const guardedInterval = setInterval(() => {
+      if (accessBlockedRef.current) {
+        return;
+      }
+      fetchConversations();
+    }, 5000);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      clearInterval(guardedInterval);
     };
   }, [fetchConversations]);
 
   React.useEffect(() => {
+    if (accessBlockedRef.current) {
+      return undefined;
+    }
+
     if (!selectedConversationId) {
       return undefined;
     }
@@ -344,6 +398,9 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     fetchMessages(selectedConversationId, { showLoader: true });
 
     const interval = setInterval(() => {
+      if (accessBlockedRef.current) {
+        return;
+      }
       fetchMessages(selectedConversationId, { showLoader: false });
     }, 4000);
 
@@ -351,6 +408,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   }, [conversations, fetchMessages, selectedConversationId]);
 
   React.useEffect(() => {
+    if (accessBlockedRef.current) {
+      return undefined;
+    }
+
     const query = customerSearchQuery.trim();
 
     if (customerSearchDebounceRef.current) {
@@ -371,8 +432,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
       setCustomerSearchLoading(false);
 
       if (!result.ok) {
-        if (result.status === 401) {
-          logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+        if (handleAuthFailure(result)) {
           return;
         }
 
@@ -391,7 +451,7 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
         customerSearchDebounceRef.current = null;
       }
     };
-  }, [accessToken, customerSearchQuery, logout]);
+  }, [accessToken, customerSearchQuery, handleAuthFailure]);
 
   const handleSelectConversation = (conversationId) => {
     setSelectedConversationId(conversationId);
@@ -434,6 +494,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   };
 
   const handleSendMessage = async (text) => {
+    if (accessBlockedRef.current) {
+      return { ok: false, error: "Destek paneli icin erisim yetkiniz bulunmuyor." };
+    }
+
     if (!selectedConversationId) {
       return { ok: false, error: "Konuşma seçilmedi" };
     }
@@ -456,11 +520,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     const result = await window.electronAPI.sendMessage(accessToken, selectedConversationId, text);
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
-      } else {
-        setError(result.error || "Mesaj gönderilemedi");
+      if (handleAuthFailure(result)) {
+        return { ok: false, error: result.error || "Mesaj gönderilemedi" };
       }
+
+      setError(result.error || "Mesaj gönderilemedi");
       return { ok: false, error: result.error || "Mesaj gönderilemedi" };
     }
 
@@ -471,6 +535,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   };
 
   const handleEditMessage = async (messageId, text) => {
+    if (accessBlockedRef.current) {
+      return { ok: false, error: "Destek paneli icin erisim yetkiniz bulunmuyor." };
+    }
+
     if (!selectedConversationId) {
       return { ok: false, error: "Konuşma seçilmedi" };
     }
@@ -481,11 +549,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     const result = await window.electronAPI.editMessage(accessToken, selectedConversationId, messageId, text);
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
-      } else {
-        setError(result.error || "Mesaj düzenlenemedi");
+      if (handleAuthFailure(result)) {
+        return { ok: false, error: result.error || "Mesaj düzenlenemedi" };
       }
+
+      setError(result.error || "Mesaj düzenlenemedi");
       return { ok: false, error: result.error || "Mesaj düzenlenemedi" };
     }
 
@@ -495,6 +563,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   };
 
   const handleDeleteMessage = async (messageId) => {
+    if (accessBlockedRef.current) {
+      return { ok: false, error: "Destek paneli icin erisim yetkiniz bulunmuyor." };
+    }
+
     if (!selectedConversationId) {
       return { ok: false, error: "Konuşma seçilmedi" };
     }
@@ -505,11 +577,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
 
     const result = await window.electronAPI.deleteMessage(accessToken, selectedConversationId, messageId);
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
-      } else {
-        setError(result.error || "Mesaj silinemedi");
+      if (handleAuthFailure(result)) {
+        return { ok: false, error: result.error || "Mesaj silinemedi" };
       }
+
+      setError(result.error || "Mesaj silinemedi");
       return { ok: false, error: result.error || "Mesaj silinemedi" };
     }
 
@@ -534,6 +606,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   );
 
   const handleBanConversation = async () => {
+    if (accessBlockedRef.current) {
+      return { ok: false, error: "Destek paneli icin erisim yetkiniz bulunmuyor." };
+    }
+
     if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
       return { ok: false, error: "Konuşma işlemi kullanılamıyor" };
     }
@@ -543,11 +619,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     setActionBusy(false);
 
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
-      } else {
-        setError(result.error || "Kullanıcı yasaklanamadı");
+      if (handleAuthFailure(result)) {
+        return { ok: false, error: result.error || "Kullanıcı yasaklanamadı" };
       }
+
+      setError(result.error || "Kullanıcı yasaklanamadı");
 
       return { ok: false, error: result.error || "Kullanıcı yasaklanamadı" };
     }
@@ -558,6 +634,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   };
 
   const handleUnbanConversation = async () => {
+    if (accessBlockedRef.current) {
+      return { ok: false, error: "Destek paneli icin erisim yetkiniz bulunmuyor." };
+    }
+
     if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
       return { ok: false, error: "Konuşma işlemi kullanılamıyor" };
     }
@@ -567,11 +647,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     setActionBusy(false);
 
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
-      } else {
-        setError(result.error || "Kullanıcının yasağı kaldırılamadı");
+      if (handleAuthFailure(result)) {
+        return { ok: false, error: result.error || "Kullanıcının yasağı kaldırılamadı" };
       }
+
+      setError(result.error || "Kullanıcının yasağı kaldırılamadı");
 
       return { ok: false, error: result.error || "Kullanıcının yasağı kaldırılamadı" };
     }
@@ -582,6 +662,10 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
   };
 
   const handleClearConversation = async () => {
+    if (accessBlockedRef.current) {
+      return { ok: false, error: "Destek paneli icin erisim yetkiniz bulunmuyor." };
+    }
+
     if (!selectedConversationId || actionBusy || !isSelectedConversationReal) {
       return { ok: false, error: "Konuşma işlemi kullanılamıyor" };
     }
@@ -591,11 +675,11 @@ export default function SupportWorkspace({ currentUser, logout, accessToken }) {
     setActionBusy(false);
 
     if (!result.ok) {
-      if (result.status === 401) {
-        logout("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
-      } else {
-        setError(result.error || "Sohbet temizlenemedi");
+      if (handleAuthFailure(result)) {
+        return { ok: false, error: result.error || "Sohbet temizlenemedi" };
       }
+
+      setError(result.error || "Sohbet temizlenemedi");
 
       return { ok: false, error: result.error || "Sohbet temizlenemedi" };
     }
