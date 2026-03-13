@@ -3,7 +3,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SUPPORT_API_BASE_URL = process.env.SUPPORT_API_BASE_URL || "http://127.0.0.1:3000";
+const SUPPORT_API_BASE_URL = "https://migros-app-bridge.onrender.com";
 const LOGIN_API_URL = `${SUPPORT_API_BASE_URL}/auth/login`;
 
 const createWindow = () => {
